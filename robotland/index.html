@@ -1,0 +1,1444 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Robbie in Robotland</title>
+<script>
+/* ================= INSTELLINGEN — vul hier je eigen gegevens in ================= */
+window.ROBBIE_CONFIG = {
+  supabaseUrl:     "",   // Project URL, bv. "https://abcdefghijkl.supabase.co"
+  supabaseAnonKey: "",   // anon / publishable key (NOOIT de service_role of secret key!)
+  klascode:        ""    // optioneel: vaste klascode voor deze pagina, bv. "K7Q2MX"
+};
+/* ================================================================================ */
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --U:#3b82f6; --R:#22c55e; --D:#f59e0b; --L:#a855f7;
+  --ab:clamp(54px, 10vmin, 92px);
+  --bs:clamp(36px, 5.4vmin, 56px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+html,body{margin:0;height:100%;overflow:hidden;font-family:'Fredoka',system-ui,sans-serif;color:#fff;background:#1b1446;touch-action:manipulation}
+button{font-family:inherit;border:0;cursor:pointer;color:inherit;background:none;padding:0}
+input,select,textarea{font-family:inherit;user-select:text;-webkit-user-select:text}
+svg{display:block}
+#bg{position:fixed;inset:0;width:100%;height:100%;z-index:0;transition:filter .6s}
+body.n2 #bg{filter:hue-rotate(-45deg) saturate(1.1)}
+body.n3 #bg{filter:hue-rotate(-95deg) saturate(1.15) brightness(.92)}
+.twinkle{animation:tw 3s ease-in-out infinite}
+@keyframes tw{0%,100%{opacity:.25}50%{opacity:1}}
+.blink{animation:bl 2.4s steps(1) infinite}
+@keyframes bl{0%{opacity:1}50%{opacity:.15}}
+.spin{transform-box:fill-box;transform-origin:center;animation:spin 26s linear infinite}
+.spin.rev{animation-direction:reverse;animation-duration:18s}
+@keyframes spin{to{transform:rotate(360deg)}}
+.hover{animation:hov 4s ease-in-out infinite}
+@keyframes hov{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+
+.screen{position:fixed;inset:0;z-index:1;display:none}
+.screen.on{display:flex}
+.topbar{display:flex;align-items:center;gap:12px;padding:12px 16px;width:100%;position:relative;z-index:3}
+.ibtn{width:54px;height:54px;border-radius:16px;background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.22);display:grid;place-items:center;flex:none}
+.ibtn svg{width:58%;height:58%}
+.ibtn:active{transform:scale(.94)}
+.ibtn.off{opacity:.45}
+.spacer{flex:1}
+.robbie-big{height:clamp(80px,15vmin,140px);animation:wave 2.2s ease-in-out infinite;transform-origin:50% 90%;filter:drop-shadow(0 6px 6px rgba(0,0,0,.4))}
+@keyframes wave{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(5deg)}}
+.title{font-size:clamp(26px,5.2vmin,54px);font-weight:700;line-height:1;text-shadow:0 4px 0 #4338ca,0 8px 18px rgba(0,0,0,.5)}
+.title small{display:block;font-size:.4em;font-weight:500;color:#c7d2fe;text-shadow:none;margin-top:8px}
+.scroll{flex:1;overflow:auto;width:100%;display:flex;flex-direction:column;align-items:center;padding:0 16px 30px;position:relative;z-index:2}
+
+/* HOME */
+#home{flex-direction:column}
+.who{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:14px;width:100%;max-width:1040px;margin-top:8px}
+.kid{background:rgba(20,14,60,.8);border:3px solid rgba(255,255,255,.18);border-radius:22px;padding:12px 6px 10px;display:flex;flex-direction:column;align-items:center;gap:6px;box-shadow:0 8px 20px rgba(0,0,0,.3)}
+.kid .sym{font-size:48px;line-height:1.1;width:76px;height:76px;border-radius:50%;background:rgba(255,255,255,.95);display:grid;place-items:center}
+.kid .sym img{height:62px}
+.kid .nm{font-size:17px;font-weight:600;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 4px}
+.kid:active{transform:scale(.96)}
+.kid.guest{border-style:dashed}
+.bigplay{margin-top:30px;width:150px;height:150px;border-radius:50%;background:#16a34a;display:grid;place-items:center;box-shadow:0 10px 0 rgba(0,0,0,.35),0 0 0 10px rgba(34,197,94,.25);animation:pulse2 1.6s ease-in-out infinite}
+.bigplay svg{width:52%;height:52%}
+@keyframes pulse2{50%{box-shadow:0 10px 0 rgba(0,0,0,.35),0 0 0 22px rgba(34,197,94,0)}}
+.hint{color:#c7d2fe;font-size:15px;margin-top:14px;text-align:center;max-width:520px;font-family:system-ui,sans-serif}
+
+/* NIVEAUS */
+#nivs{flex-direction:column}
+.player{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.22);border-radius:30px;padding:4px 16px 4px 4px;height:54px}
+.player .sym{width:44px;height:44px;border-radius:50%;background:#fff;display:grid;place-items:center;font-size:28px}
+.player .sym img{height:36px}
+.player span{font-weight:600;font-size:18px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nivcards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;width:100%;max-width:1080px;margin-top:10px}
+@media (max-width:820px){.nivcards{grid-template-columns:1fr}}
+.nivcard{position:relative;background:rgba(20,14,60,.82);border:4px solid var(--nc);border-radius:28px;padding:18px 16px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;box-shadow:0 12px 30px rgba(0,0,0,.4)}
+.nivcard:active{transform:scale(.98)}
+.nivcard .dots{display:flex;gap:8px}
+.nivcard .dots i{width:20px;height:20px;border-radius:50%;background:var(--nc);display:block;box-shadow:inset 0 -3px 0 rgba(0,0,0,.25)}
+.nivcard .art{width:120px;height:120px;border-radius:30px;background:var(--nc);display:grid;place-items:center;box-shadow:inset 0 -8px 0 rgba(0,0,0,.25)}
+.nivcard .art svg{width:72%;height:72%}
+.nivcard h2{margin:0;font-size:28px}
+.nivcard h3{margin:0;font-size:17px;font-weight:500;color:#e0e7ff}
+.nivcard .age{font-size:13px;color:#a5b4fc;font-family:system-ui,sans-serif}
+.pbar{width:100%;height:14px;border-radius:8px;background:rgba(255,255,255,.12);overflow:hidden}
+.pbar i{display:block;height:100%;background:var(--nc);border-radius:8px}
+.nivcard .dip{position:absolute;top:-14px;right:-10px;width:58px;height:58px;filter:drop-shadow(0 4px 6px rgba(0,0,0,.4))}
+.nivcard.locked{opacity:.35;pointer-events:none}
+
+/* LEVEL MAP */
+#nivmap{flex-direction:column}
+.storybox{width:100%;max-width:1080px;background:rgba(20,14,60,.78);border:3px solid var(--nc);border-radius:26px;padding:14px;display:flex;gap:16px;align-items:center;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.storybox .vis{flex:none;width:clamp(150px,26vw,280px)}
+.storybox .vis svg{width:100%;height:auto}
+.storybox p{margin:0;font-size:clamp(15px,2.2vmin,19px);line-height:1.4;color:#e0e7ff}
+.storybox .stxt{flex:1;display:flex;flex-direction:column;gap:10px}
+.storybox.beg{justify-content:center;width:auto}
+.storybox.beg .vis{width:min(560px,86vw)}
+.lvgrid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:14px;width:100%;max-width:1080px;margin-top:18px}
+@media (max-width:700px){.lvgrid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.lv{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px}
+.lv .num{width:clamp(58px,9vmin,80px);height:clamp(58px,9vmin,80px);border-radius:50%;background:linear-gradient(#fff,#cbd5e1);color:#1e1b4b;font-size:clamp(26px,4.4vmin,36px);font-weight:700;display:grid;place-items:center;box-shadow:0 5px 0 var(--nc),0 8px 14px rgba(0,0,0,.35)}
+.lv.house .num{border-radius:10px;background:none;box-shadow:none;width:clamp(70px,11vmin,100px);height:clamp(70px,11vmin,100px)}
+.lv.house .num svg{width:100%;height:100%}
+.lv:active .num{transform:translateY(3px)}
+.lv .stars{display:flex;gap:1px}
+.lv .stars svg{width:18px;height:18px}
+.lv .bug{position:absolute;top:-6px;right:4px;width:30px;height:30px}
+.lv .nw{position:absolute;top:-8px;left:0;background:#ec4899;border-radius:10px;padding:1px 7px;font-size:12px;font-weight:700}
+.lv.nextup .num{animation:pulse 1.4s ease-in-out infinite}
+.mapdip{display:none;gap:12px;align-items:center;justify-content:center;margin-top:18px}
+.mapdip.on{display:flex}
+.btn{display:inline-flex;align-items:center;gap:10px;background:#16a34a;border-radius:18px;padding:12px 22px;font-size:20px;font-weight:600;box-shadow:0 5px 0 rgba(0,0,0,.35)}
+.btn svg{width:30px;height:30px}
+.btn.gold{background:#ca8a04}
+.btn.blue{background:#4f46e5}
+.btn.gray{background:#475569}
+.btn:active{transform:translateY(3px);box-shadow:0 2px 0 rgba(0,0,0,.35)}
+
+/* GAME */
+#game{flex-direction:column}
+.bar{display:flex;align-items:center;gap:10px;padding:10px 14px;position:relative;z-index:3}
+.lvlbadge{min-width:54px;height:54px;border-radius:50%;background:var(--nc,#22c55e);display:grid;place-items:center;font-size:28px;font-weight:700;box-shadow:inset 0 -5px 0 rgba(0,0,0,.25);padding:0 10px}
+.goalstrip{display:flex;align-items:center;gap:6px;background:rgba(15,10,45,.7);border:2px solid rgba(255,255,255,.18);border-radius:18px;padding:5px 12px;height:54px}
+.goalstrip svg{width:36px;height:36px}
+.goalstrip .gb.miss{filter:grayscale(1);opacity:.35}
+.goalstrip .then{width:22px;height:22px;opacity:.7}
+.blkcount{display:none;align-items:center;gap:6px;background:rgba(15,10,45,.7);border:2px solid rgba(255,255,255,.18);border-radius:18px;padding:5px 14px;height:54px;font-size:20px;font-weight:600}
+.blkcount.on{display:flex}
+.blkcount.over{border-color:#ef4444;color:#fecaca}
+.blkcount svg{width:28px;height:28px}
+.bugtag{width:46px;height:46px;display:none}
+.bugtag.on{display:block;animation:wob 1.6s ease-in-out infinite}
+@keyframes wob{0%,100%{transform:rotate(-10deg)}50%{transform:rotate(10deg)}}
+
+.gmain{flex:1;display:flex;gap:14px;padding:0 14px 14px;min-height:0;position:relative;z-index:2}
+#boardWrap{flex:1.25;display:grid;place-items:center;min-width:0;min-height:0}
+#ctrl{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(8px,1.8vmin,18px);min-width:0;min-height:0}
+#game.tree #ctrl{justify-content:flex-start;align-items:stretch}
+@media (orientation:portrait){
+  .gmain{flex-direction:column}
+  #boardWrap{flex:1}
+  #ctrl{flex:none}
+  #game.tree #boardWrap{flex:none;height:40vh}
+  #game.tree #ctrl{flex:1}
+}
+.frame{padding:10px;border-radius:22px;background:repeating-linear-gradient(45deg,#facc15 0 14px,#1f2937 14px 28px);box-shadow:0 14px 40px rgba(0,0,0,.55)}
+.frame-in{background:#334155;border-radius:12px;padding:4px}
+#board{position:relative;display:grid;grid-template-columns:repeat(var(--c),var(--cs));grid-auto-rows:var(--cs);border-radius:10px}
+.tile{border:1px solid #7c8ba1;background:
+   radial-gradient(circle at 13% 13%,#64748b 0 2.5px,transparent 3.5px),radial-gradient(circle at 87% 13%,#64748b 0 2.5px,transparent 3.5px),
+   radial-gradient(circle at 13% 87%,#64748b 0 2.5px,transparent 3.5px),radial-gradient(circle at 87% 87%,#64748b 0 2.5px,transparent 3.5px),
+   linear-gradient(135deg,#e8edf3,#aebccd);box-shadow:inset 0 0 0 2px rgba(255,255,255,.4)}
+.tile.b{background:
+   radial-gradient(circle at 13% 13%,#64748b 0 2.5px,transparent 3.5px),radial-gradient(circle at 87% 13%,#64748b 0 2.5px,transparent 3.5px),
+   radial-gradient(circle at 13% 87%,#64748b 0 2.5px,transparent 3.5px),radial-gradient(circle at 87% 87%,#64748b 0 2.5px,transparent 3.5px),
+   linear-gradient(135deg,#d6dee8,#9dadc1)}
+.pc{position:absolute;left:calc(var(--x)*var(--cs));top:calc(var(--y)*var(--cs));width:var(--cs);height:var(--cs);display:grid;place-items:center;pointer-events:none}
+.pc>svg{width:82%;height:82%}
+.pc.obs.s>svg,.pc.obs.h>svg{width:100%;height:100%}
+.startpad>svg{width:86%;height:86%}
+.dot>i{width:22%;height:22%;border-radius:50%;background:var(--col);box-shadow:0 0 0 3px rgba(255,255,255,.7);display:block;animation:dotin .3s ease-out}
+@keyframes dotin{from{transform:scale(0)}}
+.scan{background:rgba(34,211,238,.35);box-shadow:inset 0 0 0 4px #22d3ee;border-radius:8px;animation:scan .45s ease-out forwards;z-index:4}
+.scan.no{background:rgba(244,63,94,.25);box-shadow:inset 0 0 0 4px #f43f5e}
+@keyframes scan{from{opacity:0;transform:scale(.6)}40%{opacity:1;transform:scale(1)}to{opacity:.9}}
+.goal.locked>svg{filter:grayscale(.85) brightness(.85);opacity:.6}
+.goal.unlock>svg{animation:unl .9s ease-out}
+@keyframes unl{40%{transform:scale(1.35);filter:drop-shadow(0 0 16px #4ade80)}}
+.goal.charged>svg{animation:chg .45s ease-in-out 4;filter:drop-shadow(0 0 16px #4ade80)}
+@keyframes chg{50%{transform:scale(1.18)}}
+.bolt>svg{animation:shine 2.2s ease-in-out infinite}
+@keyframes shine{50%{transform:rotate(20deg) scale(1.08)}}
+.bolt.got>svg{animation:pop .55s ease-in forwards}
+@keyframes pop{40%{transform:scale(1.6)}100%{transform:scale(0) rotate(200deg);opacity:0}}
+.bolt.flash>svg{animation:flash .35s ease-in-out 5}
+@keyframes flash{50%{transform:scale(1.4);filter:drop-shadow(0 0 12px #fde047)}}
+.robot{z-index:5;transition:left var(--mv,.38s) ease-in-out,top var(--mv,.38s) ease-in-out}
+.robot .rb{position:absolute;inset:0;display:grid;place-items:center}
+.robot img{height:calc(var(--cs)*.96);width:auto;max-width:none;filter:drop-shadow(0 5px 3px rgba(0,0,0,.35));transition:transform .2s}
+#game.tree .robot img{height:calc(var(--cs)*.86)}
+.robot .face{position:absolute;inset:0;transition:transform var(--tv,.3s) ease-in-out;display:none}
+#game.tree .robot .face{display:block}
+.robot .face::before{content:'';position:absolute;left:50%;top:calc(var(--cs)*-.1);transform:translateX(-50%);border-left:calc(var(--cs)*.15) solid transparent;border-right:calc(var(--cs)*.15) solid transparent;border-bottom:calc(var(--cs)*.2) solid #fde047;filter:drop-shadow(0 2px 2px rgba(0,0,0,.6))}
+.robot.dance .rb{animation:dance .5s ease-in-out infinite}
+@keyframes dance{0%,100%{transform:translateY(0) rotate(0)}25%{transform:translateY(-18%) rotate(-10deg)}75%{transform:translateY(-18%) rotate(10deg)}}
+.bubble{position:absolute;left:62%;top:-38%;width:58%;height:58%;border-radius:50%;background:#fff;color:#1e1b4b;display:grid;place-items:center;font-weight:700;font-size:calc(var(--cs)*.38);box-shadow:0 4px 10px rgba(0,0,0,.35);animation:bub 2.4s ease-out forwards;z-index:6}
+.bubble.bad{background:#fecaca;color:#b91c1c}
+@keyframes bub{0%{transform:scale(0)}12%{transform:scale(1.15)}20%{transform:scale(1)}80%{opacity:1}100%{opacity:0}}
+
+/* beginner strip */
+.progbox{width:100%;max-width:min(560px,100%);background:rgba(15,10,45,.8);border:3px solid #818cf8;border-radius:22px;padding:10px 12px;box-shadow:0 0 24px rgba(129,140,248,.35);display:flex;gap:10px;align-items:flex-start}
+.progbox .head{width:var(--bs);height:var(--bs);flex:none;display:grid;place-items:center;border-radius:12px;background:rgba(255,255,255,.1)}
+.progbox .head img{height:88%;max-width:100%;object-fit:contain}
+#strip{display:flex;flex-wrap:wrap;gap:7px;flex:1}
+.blk,.eslot{width:var(--bs);height:var(--bs);border-radius:12px;flex:none}
+.eslot{border:3px dashed rgba(255,255,255,.22)}
+.blk{background:var(--col);display:grid;place-items:center;box-shadow:0 4px 0 rgba(0,0,0,.35),inset 0 2px 0 rgba(255,255,255,.35)}
+.blk svg{width:72%;height:72%}
+.blk.active{outline:4px solid #fde047;outline-offset:2px;transform:translateY(-4px) scale(1.08)}
+.blk.next{outline:4px dashed #fde047;outline-offset:2px}
+.blk.err{outline:5px solid #ef4444;outline-offset:2px;animation:shake .45s}
+.blk.added{animation:addin .25s ease-out}
+@keyframes addin{from{transform:scale(.3)}}
+@keyframes shake{20%,60%{transform:translateX(-5px)}40%,80%{transform:translateX(5px)}}
+.shakeit{animation:shake .4s}
+.U{--col:var(--U)}.R{--col:var(--R)}.D{--col:var(--D)}.L{--col:var(--L)}
+.pad{display:grid;grid-template-columns:repeat(3,var(--ab));grid-template-rows:repeat(3,var(--ab));gap:8px}
+.arw{width:var(--ab);height:var(--ab);border-radius:22px;background:var(--col);display:grid;place-items:center;box-shadow:0 6px 0 rgba(0,0,0,.35),inset 0 3px 0 rgba(255,255,255,.35)}
+.arw svg{width:66%;height:66%}
+.arw:active,.act:active{transform:translateY(4px);box-shadow:0 2px 0 rgba(0,0,0,.35)}
+.arw.U{grid-area:1/2}.arw.L{grid-area:2/1}.arw.R{grid-area:2/3}.arw.D{grid-area:3/2}
+.padcenter{grid-area:2/2;display:grid;place-items:center;opacity:.9;pointer-events:none;min-width:0;min-height:0;overflow:hidden}
+.padcenter img{height:80%;max-width:100%;object-fit:contain}
+
+/* tree editor */
+.taskbox{display:none;gap:10px;align-items:flex-start;background:rgba(15,10,45,.82);border:2px solid rgba(255,255,255,.2);border-radius:18px;padding:8px 12px}
+#game.tree .taskbox{display:flex}
+.taskbox p{margin:0;font-size:clamp(14px,1.9vmin,17px);line-height:1.35;color:#e0e7ff;flex:1;max-height:5.6em;overflow:auto}
+.taskbox .ibtn{width:40px;height:40px;border-radius:12px}
+.palette{display:none;grid-template-columns:repeat(auto-fill,minmax(122px,1fr));gap:7px}
+#game.tree .palette{display:grid}
+#game.tree .pad,#game.tree .progbox{display:none}
+.pb{position:relative;display:flex;align-items:center;gap:6px;background:var(--bc);border-radius:12px;padding:6px 8px;font-weight:600;font-size:clamp(13px,1.8vmin,16px);box-shadow:0 4px 0 rgba(0,0,0,.3);text-align:left;line-height:1.1}
+.pb .ic{width:28px;height:28px;flex:none}
+.pb:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.3)}
+.pb .new{position:absolute;top:-9px;right:-6px;background:#ec4899;border-radius:9px;padding:1px 7px;font-size:11px;font-weight:700;box-shadow:0 2px 4px rgba(0,0,0,.4)}
+.pb.isnew{box-shadow:0 0 0 3px #fde047,0 4px 0 rgba(0,0,0,.3)}
+.codewrap{display:none;flex:1;min-height:120px;overflow:auto;background:rgba(15,10,45,.82);border:3px solid #818cf8;border-radius:18px;padding:6px 8px 12px}
+#game.tree .codewrap{display:block}
+.codehead{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:#c7d2fe;padding:4px 4px 2px;text-transform:uppercase;letter-spacing:.5px}
+.codehead img{height:24px}
+.code{display:flex;flex-direction:column;gap:5px;padding:4px 2px 4px 4px;align-items:flex-start}
+.nd{position:relative;border-radius:12px;--bc:#475569}
+.prim{display:flex;align-items:center;gap:8px;background:var(--bc);padding:4px 14px 4px 4px;font-weight:600;font-size:16px;box-shadow:0 3px 0 rgba(0,0,0,.3);min-width:150px;cursor:pointer}
+.prim .ic,.cont .hd .ic{width:30px;height:30px;flex:none;border-radius:8px;background:rgba(255,255,255,.18);display:grid;place-items:center}
+.prim .ic svg,.cont .hd .ic svg{width:80%;height:80%}
+.cont{background:var(--bc);padding:3px;box-shadow:0 3px 0 rgba(0,0,0,.3);min-width:190px}
+.cont>.hd,.cont>.mid{display:flex;align-items:center;gap:7px;padding:3px 10px 3px 2px;font-weight:600;font-size:16px;cursor:pointer;flex-wrap:wrap}
+.cont>.mid{padding-left:12px;font-size:14px;opacity:.95}
+.cont>.bd{margin-left:16px;background:rgba(15,10,45,.6);border-radius:10px;padding:5px;display:flex;flex-direction:column;gap:5px;align-items:flex-start;min-width:160px}
+.chip{background:#fff;color:#1e1b4b;border-radius:999px;padding:3px 11px;font-weight:700;font-size:15px;box-shadow:0 2px 0 rgba(0,0,0,.3)}
+.chip:active{transform:scale(.95)}
+.itb{font-size:13px;background:rgba(0,0,0,.3);border-radius:8px;padding:1px 7px;display:none}
+.itb.on{display:inline-block}
+.res{font-size:13px;border-radius:8px;padding:1px 8px;display:none;font-weight:700}
+.res.on{display:inline-block}
+.res.y{background:#16a34a}.res.n{background:#be123c}
+.addslot{border:2px dashed rgba(255,255,255,.3);border-radius:10px;padding:2px 12px;font-size:20px;line-height:1.2;color:rgba(255,255,255,.6);font-weight:700;cursor:pointer}
+.nd.sel>.hd,.prim.sel{outline:3px dashed rgba(255,255,255,.85);outline-offset:1px}
+.nd.active>.hd,.prim.active{outline:4px solid #fde047;outline-offset:1px}
+.nd.err>.hd,.prim.err{outline:5px solid #ef4444;outline-offset:1px;animation:shake .45s}
+.cur{height:6px;width:150px;border-radius:3px;background:#fde047;box-shadow:0 0 10px #fde047;animation:blinkc 1s steps(1) infinite;flex:none}
+@keyframes blinkc{50%{opacity:.25}}
+.emptyhint{color:#a5b4fc;font-size:14px;padding:4px 6px;font-family:system-ui,sans-serif}
+
+.acts{display:flex;align-items:center;justify-content:center;gap:clamp(8px,1.8vmin,16px)}
+.act{width:calc(var(--ab)*.78);height:calc(var(--ab)*.78);border-radius:50%;display:grid;place-items:center;background:var(--bgc);box-shadow:0 6px 0 rgba(0,0,0,.35),inset 0 3px 0 rgba(255,255,255,.3);flex:none}
+.act svg{width:52%;height:52%}
+.act.play{width:calc(var(--ab)*1.05);height:calc(var(--ab)*1.05);--bgc:#16a34a}
+.act.play.stop{--bgc:#dc2626}
+.act.step{--bgc:#eab308}.act.undo{--bgc:#64748b}.act.clear{--bgc:#be123c}.act.speed{--bgc:#0e7490}
+#game.tree .act{width:calc(var(--ab)*.66);height:calc(var(--ab)*.66)}
+#game.tree .act.play{width:calc(var(--ab)*.86);height:calc(var(--ab)*.86)}
+#game.busy .pad,#game.busy .palette,#game.busy #strip,#game.busy .code,#game.busy #btnRestart,#game.busy .act:not(.play):not(.speed){pointer-events:none;opacity:.55}
+.pulse{animation:pulse 1.3s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(253,224,71,.95),0 6px 0 rgba(0,0,0,.35)}50%{box-shadow:0 0 0 16px rgba(253,224,71,0),0 6px 0 rgba(0,0,0,.35)}}
+
+/* overlays */
+.ov{position:fixed;inset:0;background:rgba(10,6,40,.66);display:none;place-items:center;z-index:30;padding:16px}
+.ov.on{display:grid}
+.card{background:linear-gradient(#3730a3,#1e1b4b);border:4px solid #fde047;border-radius:30px;padding:22px 30px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6);animation:cardin .4s ease-out;max-width:96vw}
+@keyframes cardin{from{transform:scale(.6);opacity:0}}
+.card .robbie{height:clamp(100px,20vmin,160px);animation:dance .6s ease-in-out infinite}
+.bigstars{display:flex;justify-content:center;gap:10px;margin:8px 0 16px}
+.bigstars svg{width:clamp(50px,10vmin,76px);height:clamp(50px,10vmin,76px);transform:scale(0);animation:starin .45s ease-out forwards}
+@keyframes starin{60%{transform:scale(1.3)}100%{transform:scale(1)}}
+.cardbtns{display:flex;justify-content:center;gap:16px;flex-wrap:wrap}
+.cardbtns .act{--bgc:#64748b;width:calc(var(--ab)*.82);height:calc(var(--ab)*.82)}
+.cardbtns .act.go{--bgc:#16a34a;width:calc(var(--ab)*1.02);height:calc(var(--ab)*1.02)}
+.cardbtns .act.home{--bgc:#4f46e5}
+.conf{position:fixed;top:-20px;width:11px;height:16px;z-index:40;border-radius:2px;animation:fall linear forwards;pointer-events:none}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
+.finale .vis{width:min(420px,80vw);margin:0 auto}
+.finale .vis svg{width:100%;height:auto}
+.finale p{font-size:clamp(16px,2.4vmin,21px);color:#e0e7ff;max-width:560px;margin:8px auto 16px;line-height:1.4}
+.finale h2{margin:4px 0;font-size:clamp(26px,4.4vmin,40px)}
+.rocketgo{animation:launch 2.6s ease-in 1s forwards}
+@keyframes launch{0%{transform:translateY(0)}15%{transform:translateY(6px)}100%{transform:translateY(-420px)}}
+.glitchgo{transform-box:fill-box;transform-origin:center;animation:glgo 1.8s ease-in .8s forwards}
+@keyframes glgo{30%{transform:scale(1.2) rotate(-8deg)}100%{transform:scale(0) rotate(40deg);opacity:0}}
+
+/* diploma */
+.dipcard{max-width:min(900px,96vw)}
+.dipcard img{width:100%;max-height:58vh;object-fit:contain;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.5);background:#fff}
+.dipcard .namerow{display:flex;gap:10px;justify-content:center;align-items:center;margin:10px 0}
+.dipcard input{font-size:18px;padding:8px 12px;border-radius:12px;border:2px solid #a5b4fc;width:min(320px,70vw)}
+.dipmsg{color:#c7d2fe;font-size:14px;margin:8px 0 0;font-family:system-ui,sans-serif;min-height:1.2em}
+
+#dipOv,#loginOv{z-index:60}
+#printArea{display:none}
+@media print{@page{size:A4 landscape;margin:0}html,body{height:auto;overflow:visible;background:#fff}body>*:not(#printArea){display:none!important}#printArea{display:block!important}#printArea img{width:100%;height:auto;display:block}}
+.lin{display:block;width:100%;font-size:18px;padding:10px 12px;border-radius:12px;border:2px solid #a5b4fc;margin:8px 0;color:#0f172a}
+.lp{color:#e0e7ff;font-size:16px;line-height:1.45;font-family:system-ui,sans-serif;margin:4px 0 10px}
+.lmsg{color:#fecaca;font-size:14px;min-height:1.2em;font-family:system-ui,sans-serif;margin:4px 0}
+.lrow{display:flex;gap:10px;justify-content:flex-end;margin-top:8px}
+.lrow .btn{font-size:17px;padding:10px 18px}
+.twho{font-size:13px;opacity:.75}
+.tmsg{min-height:0;padding:0 18px;font-size:14px;color:#166534;background:#f1f5f9}
+.tmsg:not(:empty){padding:8px 18px}
+.tmsg.bad{color:#b91c1c}
+.tsel{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin:0 0 12px}
+.code{font-family:ui-monospace,Menlo,monospace;background:#eef2ff;color:#3730a3;border-radius:6px;padding:2px 7px;letter-spacing:1px}
+.code.big{font-size:17px;font-weight:700}
+/* teacher */
+.tpanel{position:fixed;inset:0;z-index:50;background:#f1f5f9;color:#0f172a;display:none;flex-direction:column;font-family:system-ui,-apple-system,sans-serif;user-select:text;-webkit-user-select:text}
+.tpanel.on{display:flex}
+.tpanel *{user-select:text;-webkit-user-select:text}
+.thead{display:flex;align-items:center;gap:12px;padding:12px 18px;background:#1e1b4b;color:#fff}
+.thead h1{margin:0;font-size:20px;font-family:'Fredoka',system-ui,sans-serif;flex:1}
+.thead button{background:rgba(255,255,255,.15);border-radius:10px;padding:8px 14px;font-size:15px}
+.ttabs{display:flex;gap:4px;padding:10px 18px 0;background:#e2e8f0;flex-wrap:wrap}
+.ttabs button{padding:10px 16px;border-radius:10px 10px 0 0;font-size:15px;font-weight:600;color:#334155}
+.ttabs button.on{background:#f1f5f9;color:#1e1b4b}
+.tbody{flex:1;overflow:auto;padding:18px}
+.tbody h2{font-size:18px;margin:0 0 8px}
+.tbody h3{font-size:16px;margin:18px 0 6px;color:#3730a3}
+.tbody p,.tbody li{font-size:15px;line-height:1.5;color:#334155}
+.tcard{background:#fff;border-radius:14px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.08);margin-bottom:14px;max-width:1100px}
+.status{display:inline-flex;align-items:center;gap:8px;font-size:14px;padding:6px 12px;border-radius:999px;background:#e2e8f0;color:#334155}
+.status.cloud{background:#dcfce7;color:#166534}
+.status.local{background:#fef3c7;color:#92400e}
+table.prog{border-collapse:collapse;width:100%;font-size:14px}
+table.prog th{text-align:left;padding:8px;border-bottom:2px solid #cbd5e1;color:#475569;font-weight:600;white-space:nowrap}
+table.prog td{padding:8px;border-bottom:1px solid #e2e8f0;vertical-align:middle}
+.sq{display:inline-flex;gap:2px;flex-wrap:wrap;max-width:200px;vertical-align:middle}
+.sq i{width:13px;height:13px;border-radius:3px;background:#e2e8f0;display:block}
+.sq i.s1{background:#bbf7d0}.sq i.s2{background:#4ade80}.sq i.s3{background:#15803d}
+.cnt{font-size:12px;color:#64748b;margin-left:6px}
+.tb{background:#4f46e5;color:#fff;border-radius:10px;padding:7px 12px;font-size:14px;font-weight:600;margin:2px}
+.tb.sm{padding:4px 9px;font-size:13px}
+.tb.gray{background:#64748b}.tb.red{background:#b91c1c}.tb.green{background:#15803d}.tb.gold{background:#ca8a04}
+.tin{font-size:15px;padding:7px 10px;border:1px solid #cbd5e1;border-radius:9px;background:#fff;color:#0f172a}
+.krow{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #e2e8f0;flex-wrap:wrap}
+.symbtn{width:44px;height:44px;border-radius:50%;background:#f1f5f9;border:2px solid #cbd5e1;font-size:26px;display:grid;place-items:center}
+.symgrid{display:grid;grid-template-columns:repeat(auto-fill,44px);gap:6px;margin-top:8px}
+.symgrid button{width:44px;height:44px;border-radius:10px;background:#f1f5f9;font-size:26px}
+.symgrid button.taken{opacity:.3}
+textarea.tin{width:100%;min-height:120px}
+.muted{color:#64748b;font-size:13px}
+.pinpad{display:grid;grid-template-columns:repeat(3,70px);gap:10px;justify-content:center;margin-top:14px}
+.pinpad button{height:64px;border-radius:16px;background:rgba(255,255,255,.14);font-size:28px;font-weight:600}
+.pindots{display:flex;gap:12px;justify-content:center;margin-top:10px}
+.pindots i{width:18px;height:18px;border-radius:50%;border:2px solid #fff;display:block}
+.pindots i.f{background:#fde047;border-color:#fde047}
+</style>
+</head>
+<body>
+<svg id="bg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMax slice" aria-hidden="true"></svg>
+
+<!-- HOME: wie ben jij -->
+<div id="home" class="screen on">
+  <div class="topbar">
+    <img class="robbie-big" data-robbie alt="Robbie Robot">
+    <div class="title">Robbie in Robotland<small id="homeSub">Wie ben jij?</small></div>
+    <div class="spacer"></div>
+    <button class="ibtn" id="btnSound" aria-label="Geluid aan of uit"></button>
+    <button class="ibtn" id="btnTeach" aria-label="Leerkracht"></button>
+  </div>
+  <div class="scroll"><div class="who" id="who"></div><div id="homeHint"></div></div>
+</div>
+
+<!-- NIVEAUS -->
+<div id="nivs" class="screen">
+  <div class="topbar">
+    <button class="player" id="btnPlayer" aria-label="Andere speler"></button>
+    <div class="spacer"></div>
+    <button class="ibtn" id="btnSound2" aria-label="Geluid aan of uit"></button>
+  </div>
+  <div class="scroll"><div class="nivcards" id="nivCards"></div></div>
+</div>
+
+<!-- LEVEL MAP -->
+<div id="nivmap" class="screen">
+  <div class="topbar">
+    <button class="ibtn" id="btnBackNivs" aria-label="Terug naar de niveaus"></button>
+    <div class="title" id="mapTitle" style="font-size:clamp(22px,4vmin,40px)"></div>
+    <div class="spacer"></div>
+    <button class="ibtn" id="btnStory" aria-label="Verhaal beluisteren"></button>
+  </div>
+  <div class="scroll">
+    <div class="storybox" id="storyBox"><div class="vis" id="storyVis"></div><div class="stxt"><p id="storyText"></p></div></div>
+    <div class="lvgrid" id="lvGrid"></div>
+    <div class="mapdip" id="mapDip"><button class="btn gold" id="btnMapDip"></button><button class="btn blue" id="btnMapFinale"></button></div>
+  </div>
+</div>
+
+<!-- GAME -->
+<div id="game" class="screen">
+  <div class="bar">
+    <button class="ibtn" id="btnMap" aria-label="Naar de levels"></button>
+    <div class="lvlbadge" id="lvlNum">1</div>
+    <div class="goalstrip" id="goalStrip"></div>
+    <div class="blkcount" id="blkCount"></div>
+    <svg class="bugtag" id="bugTag" viewBox="0 0 100 100"></svg>
+    <div class="spacer"></div>
+    <button class="ibtn" id="btnSay" aria-label="Opdracht opnieuw horen"></button>
+    <button class="ibtn" id="btnRestart" aria-label="Level opnieuw beginnen"></button>
+  </div>
+  <div class="gmain">
+    <section id="boardWrap"><div class="frame"><div class="frame-in"><div id="board"></div></div></div></section>
+    <section id="ctrl">
+      <div class="taskbox"><p id="taskText"></p></div>
+      <div class="palette" id="palette"></div>
+      <div class="codewrap" id="codeWrap">
+        <div class="codehead"><img data-robbie alt="">Programma</div>
+        <div class="code" id="codeMain"></div>
+        <div id="fnWrap"><div class="codehead" style="margin-top:8px;color:#fde68a">★ Functie</div><div class="code" id="codeFn"></div></div>
+      </div>
+      <div class="progbox" id="progBox"><div class="head"><img data-robbie alt=""></div><div id="strip"></div></div>
+      <div class="pad" id="pad">
+        <button class="arw U" data-d="U" aria-label="Pijl omhoog"></button>
+        <button class="arw L" data-d="L" aria-label="Pijl naar links"></button>
+        <div class="padcenter"><img data-robbie alt=""></div>
+        <button class="arw R" data-d="R" aria-label="Pijl naar rechts"></button>
+        <button class="arw D" data-d="D" aria-label="Pijl omlaag"></button>
+      </div>
+      <div class="acts">
+        <button class="act undo" id="btnUndo" aria-label="Blok wissen"></button>
+        <button class="act step" id="btnStep" aria-label="Eén stap"></button>
+        <button class="act play" id="btnPlay" aria-label="Start"></button>
+        <button class="act clear" id="btnClear" aria-label="Alles wissen"></button>
+        <button class="act speed" id="btnSpeed" aria-label="Snelheid"></button>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- WIN -->
+<div class="ov" id="winOv"><div class="card">
+  <img class="robbie" data-robbie alt="">
+  <div class="bigstars" id="bigStars"></div>
+  <div class="cardbtns">
+    <button class="act home" id="wMap" aria-label="Naar de levels"></button>
+    <button class="act" id="wRetry" aria-label="Nog eens"></button>
+    <button class="act go" id="wNext" aria-label="Verder"></button>
+  </div>
+</div></div>
+
+<!-- FINALE -->
+<div class="ov" id="finOv"><div class="card finale">
+  <div class="vis" id="finVis"></div>
+  <h2 id="finTitle"></h2>
+  <p id="finText"></p>
+  <div class="cardbtns">
+    <button class="btn gold" id="finDip"></button>
+    <button class="btn blue" id="finMap"></button>
+  </div>
+</div></div>
+
+<!-- DIPLOMA -->
+<div class="ov" id="dipOv"><div class="card dipcard">
+  <img id="dipImg" alt="Diploma">
+  <div class="namerow" id="dipNameRow"><input id="dipName" placeholder="Naam van de leerling" maxlength="40"><button class="btn blue" id="dipNameOk" style="padding:8px 16px;font-size:17px">OK</button></div>
+  <div class="cardbtns" style="margin-top:12px">
+    <button class="btn gold" id="dipPdf"></button><button class="btn blue" id="dipPrint"></button>
+    <button class="btn gray" id="dipClose">Sluiten</button>
+  </div>
+  <p class="dipmsg" id="dipMsg"></p>
+</div></div>
+
+<!-- LOGIN -->
+<div class="ov" id="loginOv"><div class="card" style="width:min(420px,92vw);text-align:left">
+  <h2 style="margin:0 0 6px">Leerkracht</h2><div id="loginBody"></div>
+</div></div>
+
+<!-- TEACHER PANEL -->
+<div class="tpanel" id="tPanel">
+  <div class="thead"><h1>Leerkrachtenpaneel · Robbie in Robotland</h1><span class="twho" id="tWho"></span><button id="tRefresh">Vernieuwen</button><button id="tLogout">Afmelden</button><button id="tClose">Sluiten ✕</button></div>
+  <div class="tmsg" id="tMsg"></div>
+  <div class="ttabs" id="tTabs"></div>
+  <div class="tbody" id="tBody"></div>
+</div>
+
+<div id="printArea"><img id="printImg" alt=""></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function(){
+"use strict";
+const ROBBIE="data:image/png;base64,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";
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+/* =====================================================================
+   NIVEAUS & LEVELS
+   Kaarten als tekst:  .  vrij   G doel   b bout   @ start (pijlen-niveau)
+   N/E/S/W start met kijkrichting   k kist  c kegel  o olie  s serverkast (hoog)  h gat (overspringen)
+   ===================================================================== */
+const NIVS=[
+ {n:1,name:'Beginner',title:'Stroomstoring in Robotstad',age:'2de kleuterklas – 1ste leerjaar',color:'#22c55e',mode:'abs',goal:'battery',
+  dipTitle:'Junior Programmeur',concepts:['een algoritme maken met pijlen','fouten zoeken en verbeteren (debuggen)','obstakels ontwijken en bouten verzamelen'],
+  intro:"Oh nee! Er is een stroomstoring in Robotstad. Alle lichtjes zijn uit. Help jij Robbie om de batterijen te halen? Bij elke batterij gaat er een huis weer branden.",
+  outro:"Hoera! Alle lichtjes in Robotstad branden weer. Dankjewel, slimme programmeur!", finTitle:'Robotstad straalt weer!'},
+ {n:2,name:'Gemiddeld',title:'De raket van Robbie',age:'2de – 4de leerjaar',color:'#3b82f6',mode:'rel',goal:'part',
+  dipTitle:'Robot Programmeur',concepts:['vooruit, achteruit en draaien vanuit de robot','springen over gaten','herhalingen (lussen) gebruiken'],
+  intro:"Robbie wil zijn vriendin Ruby op de maan bezoeken. Maar oei, zijn raket is in stukken gevallen! De onderdelen liggen verspreid in de Robotfabriek. Robbie kan nu vooruit en achteruit rijden, draaien en springen. Help jij hem alle twaalf onderdelen te vinden?",
+  outro:"De raket is klaar! Drie, twee, één... lancering! Robbie vliegt naar Ruby op de maan. Wat een knap programmeerwerk!", finTitle:'De raket vertrekt!'},
+ {n:3,name:'Uitdagend',title:'Robbie tegen de Glitch',age:'5de – 6de leerjaar',color:'#a855f7',mode:'rel',goal:'chip',
+  dipTitle:'Meester Programmeur',concepts:['geneste herhalingen','functies maken en gebruiken','als-dan-anders en herhaal-tot'],
+  intro:"Alarm! Een computervirus, de Glitch, heeft de Mega-computer van Robotland gehackt. Robbie moet twaalf datachips herstellen om de Glitch te verslaan. Daarvoor heb je slimme programma's nodig met geneste herhalingen, functies en als-dan-keuzes.",
+  outro:"De Glitch is verslagen! De Mega-computer werkt weer en heel Robotland juicht. Jij bent een echte programmeerheld!", finTitle:'De Glitch is verslagen!'}
+];
+const ALLMOVE=['F','B','TL','TR','J'];
+const LEVELS={
+1:[
+ {m:["...","@.G","..."], say:"Help Robbie naar de batterij! Tik op een pijl. Druk dan op de groene knop."},
+ {m:[".G.","...",".@."], say:"Robbie moet naar boven. Welke pijl heb je nodig?"},
+ {m:["....","G..@","...."], say:"Nu moet Robbie de andere kant op."},
+ {m:[".@..","....","....",".G.."], say:"En nu naar beneden!"},
+ {m:["..G.","....","@..."], say:"Nu heeft Robbie twee soorten pijlen nodig."},
+ {m:["...@","....","....",".G.."], say:"Help Robbie naar de batterij."},
+ {m:["@...","....","...G"], pre:"RRRDU", say:"Oei! Er zit een foutje in het programma van Robbie. Druk op de groene knop en kijk goed. Tik op een pijl om hem te draaien."},
+ {m:[".....","@.k.G","....."], say:"Pas op! Robbie kan niet door de kisten. Zoek een weg errond."},
+ {m:["@....",".kok.",".....","...cG"], say:"Robbie kan niet door kisten, olievlekken en kegels. Zoek een weg naar de batterij."},
+ {m:["...G",".k..","..o.","@..c"], pre:"UUURDR", say:"Oei! Weer een foutje. Druk op de groene knop. Bij welke pijl gaat het mis? Tik erop om hem te draaien."},
+ {m:["..b..","@...G","....."], say:"Robbie heeft een bout nodig! Raap eerst de bout op. Ga dan naar de batterij."},
+ {m:["..b.G",".k.o.","@..b."], say:"De laatste batterij! Raap de twee bouten op en ga dan naar de batterij."}
+],
+2:[
+ {m:[".....","E...G","....."], blocks:['F'], nieuw:'F', best:4, say:"Robbie kijkt naar rechts: dat zie je aan het gele pijltje. Met het blok vooruit zet hij één stap in de richting waarin hij kijkt. Breng Robbie naar het raketonderdeel."},
+ {m:["E...","....","....","...G"], blocks:['F','TR'], nieuw:'TR', best:7, say:"Nieuw blok: draai rechts. Robbie draait ter plaatse een kwartslag naar rechts. Hij zet dan nog geen stap!"},
+ {m:["...G","....","....","E..."], blocks:['F','TL','TR'], nieuw:'TL', best:7, say:"Nu kan Robbie ook naar links draaien. Let op: links en rechts is vanuit Robbie zelf, niet vanuit jou!"},
+ {m:["...kG","...k.","..b..",".kc..","Nk..."], blocks:['F','TL','TR'], best:10, say:"Robbie kijkt nu naar boven. Raap de bout op en zoek dan het onderdeel."},
+ {m:["S...","..c.","....","...G"], blocks:['F','TL','TR'], pre:"F F F TR F F F", best:7, say:"Oei, een foutje! Druk op start en kijk waar het misloopt. Tik op het foute blok, wis het met de grijze knop en kies een beter blok."},
+ {m:["...k.","G..Ek","...k."], blocks:['F','B','TL','TR'], nieuw:'B', max:4, best:3, say:"Nieuw blok: achteruit. Robbie rijdt dan een stap achteruit, zonder te draaien. Je mag maar 4 blokken gebruiken!"},
+ {m:["..h..","E.h.G","..h.."], blocks:ALLMOVE, nieuw:'J', best:3, say:"Een gat in de vloer! Met het nieuwe blok spring springt Robbie over één vakje heen. Over kisten kan hij niet springen: die zijn te hoog."},
+ {m:["b..hG","...h.","hhkh.",".....","N...."], blocks:ALLMOVE, best:7, say:"Raap de bout op en spring naar het onderdeel. Welke weg is het kortst?"},
+ {m:[".c..c..c","E......G","..c..c.."], blocks:[...ALLMOVE,'REP'], nieuw:'REP', max:2, best:2, say:"Nieuw: het blok herhaal! Alles wat je in de herhaling zet, doet Robbie meerdere keren. Tik op het getal om te kiezen hoe vaak. Je mag maar 2 blokken gebruiken."},
+ {m:["..........","E.h..h..hG",".........."], blocks:[...ALLMOVE,'REP'], max:4, best:3, say:"Zie je het patroon? Zet twee blokken in een herhaling. Maximaal 4 blokken!"},
+ {m:["E..b","Gkk.",".kk.","b..b"], blocks:[...ALLMOVE,'REP'], pre:"2{F F F TR} F F", max:8, best:7, say:"Robbie vergeet een bout... Er zit een foutje in het programma. Kan jij het vinden?"},
+ {m:[".....G","......",".....k","....kk","...kkk","E.kkkk"], blocks:[...ALLMOVE,'REP'], max:6, best:5, say:"De laatste opdracht: Robbie moet de trap op naar de lanceerplaats. Zoek het patroon en gebruik een herhaling. Maximaal 6 blokken!"}
+],
+3:[
+ {m:["......",".ssss.",".ssss.",".ssss.",".ssss.","N..s.G"], blocks:[...ALLMOVE,'REP'], max:9, best:8, say:"Opwarmer: breng Robbie rond de Mega-computer naar de datachip. Gebruik herhalingen: maximaal 9 blokken."},
+ {m:["b.....b",".sssss.",".sssss.",".sssss.",".sssss.",".sssss.","NG....b"], blocks:[...ALLMOVE,'REP'], nieuw:'REP', max:4, best:4, say:"Haal de drie bouten en ga dan naar de chip, met maar 4 blokken! Tip: je kan een herhaling ín een andere herhaling zetten. Dat heet een geneste herhaling."},
+ {m:["E....b","Gssss.",".ssss.",".ssss.",".ssss.","b....b"], blocks:[...ALLMOVE,'REP'], pre:"4{5{F} TL}", max:5, best:4, say:"De Glitch heeft het programma veranderd! Druk op start, zoek de fout en verbeter ze."},
+ {m:["ssssssssss","sbssbbssbs","s.ss..ss.s","E........G"], blocks:[...ALLMOVE,'REP','C'], fn:true, nieuw:'C', max:19, best:17, say:"Nieuw: een functie! In het vak Functie bouw je je eigen blok. Met het blok functie voert Robbie dat stukje programma uit, zo vaak als je wil. Maak een functie die een bout uit een nisje haalt. Maximaal 19 blokken."},
+ {m:["sbsbsbsbs","s.s.s.s.s","E.......G","s.s.s.s.s","sbsbsbsbs"], blocks:[...ALLMOVE,'REP','C'], fn:true, max:14, best:13, say:"Nu liggen er bouten boven én onder de gang. Combineer een functie met een herhaling. Maximaal 14 blokken."},
+ {m:["ssssssss","sbsbssbs","s.s.ss.s","E......G"], blocks:[...ALLMOVE,'REP','C'], fn:true, pre:"F C 2{F} C 3{F} C F", preFn:"TL F F B B TL", max:16, best:15, say:"De Glitch zit in de functie! Robbie haalt de eerste bout, maar daarna loopt het mis. Verbeter de functie."},
+ {m:["ssssssssss","E.h.h..h.G","ssssssssss"], blocks:[...ALLMOVE,'REP','UNTIL','IF'], conds:['gat','vrij'], nieuw:'IF', max:5, best:4, say:"Nieuw: herhaal tot bij de chip, en als ... anders. Robbie kijkt met zijn sensor naar het vakje vóór hem. Is daar een gat? Dan springt hij. Anders gaat hij vooruit. Tik op de witte knop in het als-blok om te kiezen waar Robbie naar kijkt. Maximaal 5 blokken!"},
+ {m:["......",".ssss.",".s.Gs.",".s.ss.",".s.ss.","Ns...."], blocks:[...ALLMOVE,'REP','UNTIL','IF'], conds:['muur','vrij','gat'], max:5, best:4, say:"Een kronkelgang! Robbie moet alleen naar rechts draaien als er een muur vóór hem staat. Anders gaat hij vooruit. Maximaal 5 blokken."},
+ {m:["....sS",".ss.s.",".ss.s.",".sG.s.",".ssss.","......"], blocks:[...ALLMOVE,'REP','UNTIL','IF'], conds:['muur','vrij','gat'], pre:"*{?muur{TL}{F}}", max:5, best:4, say:"Robbie blijft maar rondjes lopen... Dat heet een oneindige lus. Druk op start, kijk wat er gebeurt en zoek de fout!"},
+ {m:["E..h.b.","ssssss.","ssssssh","ssssssb","sG..h.."], blocks:[...ALLMOVE,'REP','UNTIL','IF'], conds:['muur','gat','vrij'], max:7, best:6, say:"Gaten én bochten! Je kan een als-blok in een ander als-blok zetten. Maximaal 7 blokken."},
+ {m:["E..s...","ss.s.s.","...b.s.",".sss.s.","....bsG"], blocks:[...ALLMOVE,'REP','UNTIL','IF'], conds:['rv','vrij','muur','lv','gat'], max:8, best:7, say:"Een doolhof! Slimme robots gebruiken de rechterhandregel: is rechts vrij, draai dan naar rechts en ga vooruit. Anders: ga rechtdoor als dat kan. Anders: draai naar links. Maximaal 8 blokken."},
+ {m:["Ehb.s.b.","sss.shs.","sss...sh","sssssss.","sssssss.","sGb.h..."], blocks:[...ALLMOVE,'REP','UNTIL','IF','C'], fn:true, conds:['gat','vrij','rv','lv','muur'], max:10, best:8, say:"De eindstrijd tegen de Glitch! Gaten, bochten naar links én naar rechts, en drie bouten. Maak één slim programma dat Robbie helemaal naar de laatste chip brengt. Maximaal 10 blokken."}
+]};
+
+const DV=[[0,-1],[1,0],[0,1],[-1,0]];
+const ABS={U:0,R:1,D:2,L:3};
+const HIGH=new Set(['k','c','s']);
+const LIMIT=600;
+
+function parseLevel(L,niv){
+  L.niv=niv.n; L.mode=niv.mode; L.r=L.m.length; L.c=L.m[0].length;
+  L.obsMap=new Map(); L.bolts=[]; L.obs=[];
+  L.m.forEach((row,y)=>[...row].forEach((ch,x)=>{
+    if(ch==='@'){L.s=[x,y,1];}
+    else if('NESW'.includes(ch)){L.s=[x,y,'NESW'.indexOf(ch)];}
+    else if(ch==='G'){L.g=[x,y];}
+    else if(ch==='b'){L.bolts.push([x,y]);}
+    else if('kcosh'.includes(ch)){L.obsMap.set(x+','+y,ch);L.obs.push([x,y,ch]);}
+  }));
+  L.full=(1<<L.bolts.length)-1;
+  if(L.mode==='abs'){ L.opt=bfs(L); L.slots=Math.min(16,Math.max(6,L.opt+4,(L.pre||'').length+3)); }
+  else { L.best=L.best||99; L.max=L.max||24; L.blocks=L.blocks||ALLMOVE; L.conds=L.conds||['vrij']; }
+}
+function bfs(L){
+  const q=[[L.s[0],L.s[1],0,0]],seen=new Set([L.s[0]+','+L.s[1]+',0']);
+  while(q.length){const [x,y,m,d]=q.shift();
+    for(let dir=0;dir<4;dir++){const nx=x+DV[dir][0],ny=y+DV[dir][1];
+      if(nx<0||ny<0||nx>=L.c||ny>=L.r||L.obsMap.has(nx+','+ny))continue;
+      let nm=m;const bi=L.bolts.findIndex(b=>b[0]===nx&&b[1]===ny);if(bi>=0)nm|=1<<bi;
+      if(nx===L.g[0]&&ny===L.g[1]&&nm===L.full)return d+1;
+      const k=nx+','+ny+','+nm;if(seen.has(k))continue;seen.add(k);q.push([nx,ny,nm,d+1]);}}
+  return 99;
+}
+NIVS.forEach(nv=>LEVELS[nv.n].forEach(L=>parseLevel(L,nv)));
+
+/* ---------- program model ---------- */
+let UID=1; const uid=()=>'n'+(UID++);
+function mk(t){const n={id:uid(),t};if(t==='REP'){n.n=2;n.body=[];}if(t==='UNTIL'){n.body=[];}if(t==='IF'){n.c='vrij';n.body=[];n.els=[];}return n;}
+function parseProg(str){
+  const toks=(str||'').match(/\d+\{|\*\{|\?[a-z]+\{|\}\{|\{|\}|[A-Z]+/g)||[]; let i=0;
+  function seq(){const out=[];while(i<toks.length){const t=toks[i];
+    if(t==='}'||t==='}{')return out; i++;
+    if(/^\d+\{$/.test(t)){const n=mk('REP');n.n=parseInt(t);n.body=seq();i++;out.push(n);}
+    else if(t==='*{'){const n=mk('UNTIL');n.body=seq();i++;out.push(n);}
+    else if(t[0]==='?'){const n=mk('IF');n.c=t.slice(1,-1);n.body=seq();if(toks[i]==='}{'){i++;n.els=seq();}i++;out.push(n);}
+    else out.push(mk(t));}
+   return out;}
+  return seq();
+}
+function countBlocks(list){let c=0;for(const n of list){c++;if(n.body)c+=countBlocks(n.body);if(n.els)c+=countBlocks(n.els);}return c;}
+function cloneList(list){return list.map(n=>{const c=Object.assign({},n,{id:uid()});if(n.body)c.body=cloneList(n.body);if(n.els)c.els=cloneList(n.els);return c;});}
+
+/* ---------- interpreter (generator) ---------- */
+function cellObs(L,x,y){return L.obsMap.get(x+','+y);}
+function inside(L,x,y){return x>=0&&y>=0&&x<L.c&&y<L.r;}
+function freeCell(L,x,y){return inside(L,x,y)&&!cellObs(L,x,y);}
+function sense(L,S,c){
+  const f=[S.x+DV[S.d][0],S.y+DV[S.d][1]];
+  const rd=(S.d+1)%4,ld=(S.d+3)%4;
+  switch(c){
+    case 'vrij':return freeCell(L,f[0],f[1]);
+    case 'gat':return inside(L,f[0],f[1])&&cellObs(L,f[0],f[1])==='h';
+    case 'muur':return !inside(L,f[0],f[1])||HIGH.has(cellObs(L,f[0],f[1]));
+    case 'rv':return freeCell(L,S.x+DV[rd][0],S.y+DV[rd][1]);
+    case 'lv':return freeCell(L,S.x+DV[ld][0],S.y+DV[ld][1]);
+  }return false;
+}
+function senseCell(S,c){const d=c==='rv'?(S.d+1)%4:c==='lv'?(S.d+3)%4:S.d;return [S.x+DV[d][0],S.y+DV[d][1]];}
+function* G_list(list,S,L){for(const nd of list){yield* G_node(nd,S,L);if(S.done)return;}}
+function tired(S,nd){S.done=true;S.res='tired';return {k:'tired',nd};}
+function* G_move(nd,S,L,dir,jump){
+  const [dx,dy]=DV[dir];let tx=S.x+dx,ty=S.y+dy,reason=null;
+  if(jump){
+    if(!inside(L,tx,ty))reason='wall';
+    else if(HIGH.has(cellObs(L,tx,ty)))reason='high';
+    else{tx+=dx;ty+=dy;if(!inside(L,tx,ty))reason='wall';else if(cellObs(L,tx,ty))reason='land';}
+  } else {
+    if(!inside(L,tx,ty))reason='wall';
+    else{const o=cellObs(L,tx,ty);if(o==='h')reason='hole';else if(o)reason='obs';}
+  }
+  if(reason){S.done=true;S.res='bump';yield {k:'bump',nd,reason,dir};return;}
+  const from=[S.x,S.y];S.x=tx;S.y=ty;let got=-1;
+  const bi=L.bolts.findIndex(b=>b[0]===tx&&b[1]===ty);
+  if(bi>=0&&!(S.mask&(1<<bi))){S.mask|=1<<bi;got=bi;}
+  const win=tx===L.g[0]&&ty===L.g[1]&&S.mask===L.full;
+  if(win){S.done=true;S.res='win';}
+  yield {k:'move',nd,from,to:[tx,ty],dir,jump,got,win};
+}
+function* G_node(nd,S,L){
+  if(S.done)return;
+  if(++S.steps>LIMIT){yield tired(S,nd);return;}
+  const t=nd.t;
+  if(t in ABS){yield* G_move(nd,S,L,ABS[t],false);return;}
+  switch(t){
+    case 'F':yield* G_move(nd,S,L,S.d,false);return;
+    case 'B':yield* G_move(nd,S,L,(S.d+2)%4,false);return;
+    case 'J':yield* G_move(nd,S,L,S.d,true);return;
+    case 'TL':S.d=(S.d+3)%4;S.rot-=90;yield {k:'turn',nd};return;
+    case 'TR':S.d=(S.d+1)%4;S.rot+=90;yield {k:'turn',nd};return;
+    case 'REP':for(let i=1;i<=nd.n;i++){yield {k:'iter',nd,i,n:nd.n};yield* G_list(nd.body,S,L);if(S.done)return;}return;
+    case 'UNTIL':{const seen=new Set();let i=0;
+      while(true){const key=S.x+','+S.y+','+S.d+','+S.mask;
+        if(seen.has(key)){yield tired(S,nd);return;} seen.add(key);
+        if(++S.steps>LIMIT){yield tired(S,nd);return;}
+        yield {k:'iter',nd,i:++i};yield* G_list(nd.body,S,L);if(S.done)return;}}
+    case 'IF':{const r=sense(L,S,nd.c);yield {k:'check',nd,res:r,cell:senseCell(S,nd.c)};yield* G_list(r?nd.body:nd.els,S,L);return;}
+    case 'C':{if(S.depth>6){yield tired(S,nd);return;}S.depth++;yield {k:'call',nd};yield* G_list(S.fn,S,L);S.depth--;return;}
+  }
+}
+function newState(L,fn){return {x:L.s[0],y:L.s[1],d:L.s[2],rot:L.s[2]*90,mask:0,steps:0,depth:0,done:false,res:null,fn:fn||[]};}
+function simulate(n,i,mainStr,fnStr){
+  const L=LEVELS[n][i];
+  const main=L.mode==='abs'?[...mainStr].map(mk):parseProg(mainStr);const fn=parseProg(fnStr||'');
+  const S=newState(L,fn);let last=null;for(const ev of G_list(main,S,L)){last=ev;}
+  return {res:S.res||'end',blocks:countBlocks(main)+countBlocks(fn),last:last&&last.k,reason:last&&last.reason};
+}
+
+/* =====================================================================
+   ART
+   ===================================================================== */
+function arrowSVG(dir){const rot={U:0,R:90,D:180,L:270}[dir];
+  return `<svg viewBox="0 0 100 100"><g transform="rotate(${rot} 50 50)"><path d="M50 8 L88 50 L65 50 L65 90 L35 90 L35 50 L12 50 Z" fill="#fff" stroke="rgba(0,0,0,.28)" stroke-width="5" stroke-linejoin="round"/></g></svg>`;}
+const ART={
+  battery:`<svg viewBox="0 0 100 100"><rect x="38" y="5" width="24" height="12" rx="3" fill="#94a3b8" stroke="#334155" stroke-width="3"/><rect x="21" y="14" width="58" height="82" rx="11" fill="#0f172a" stroke="#e2e8f0" stroke-width="5"/><rect x="28" y="21" width="44" height="68" rx="6" fill="#22c55e"/><rect x="28" y="21" width="44" height="22" rx="6" fill="#4ade80"/><path d="M56 26 L34 59 L49 59 L43 85 L67 49 L52 49 Z" fill="#fef08a" stroke="#854d0e" stroke-width="2.5" stroke-linejoin="round"/></svg>`,
+  part:`<svg viewBox="0 0 100 100"><circle cx="50" cy="52" r="44" fill="#1e3a8a" opacity=".35"/><path d="M50 8 C68 22 72 44 68 70 L32 70 C28 44 32 22 50 8 Z" fill="#f8fafc" stroke="#1e293b" stroke-width="4"/><circle cx="50" cy="38" r="9" fill="#38bdf8" stroke="#1e293b" stroke-width="4"/><path d="M32 52 L16 74 L32 70 Z M68 52 L84 74 L68 70 Z" fill="#ef4444" stroke="#1e293b" stroke-width="4" stroke-linejoin="round"/><path d="M40 72 L50 94 L60 72 Z" fill="#f97316"/><path d="M45 72 L50 86 L55 72 Z" fill="#fde047"/></svg>`,
+  chip:`<svg viewBox="0 0 100 100"><g stroke="#94a3b8" stroke-width="5" stroke-linecap="round"><path d="M30 10v12M50 10v12M70 10v12M30 78v12M50 78v12M70 78v12M10 30h12M10 50h12M10 70h12M78 30h12M78 50h12M78 70h12"/></g><rect x="20" y="20" width="60" height="60" rx="8" fill="#065f46" stroke="#022c22" stroke-width="4"/><rect x="34" y="34" width="32" height="32" rx="5" fill="#34d399" stroke="#022c22" stroke-width="3"/><path d="M42 50h16M50 42v16" stroke="#022c22" stroke-width="4"/></svg>`,
+  bolt:`<svg viewBox="0 0 100 100"><polygon points="86,50 68,81 32,81 14,50 32,19 68,19" fill="#f59e0b" stroke="#78350f" stroke-width="5" stroke-linejoin="round"/><polygon points="68,19 86,50 50,50 32,19" fill="#fde68a" opacity=".7"/><circle cx="50" cy="50" r="15" fill="#78350f"/><circle cx="50" cy="50" r="9" fill="#451a03"/></svg>`,
+  k:`<svg viewBox="0 0 100 100"><rect x="10" y="12" width="80" height="80" rx="6" fill="#b45309" stroke="#5b2a06" stroke-width="5"/><rect x="19" y="21" width="62" height="62" fill="none" stroke="#7c3a0a" stroke-width="5"/><path d="M21 23 L79 81 M79 23 L21 81" stroke="#7c3a0a" stroke-width="7"/></svg>`,
+  o:`<svg viewBox="0 0 100 100"><path d="M20 55 C8 40 25 22 42 28 C52 14 78 18 80 36 C96 42 92 68 74 72 C66 88 40 88 33 76 C16 78 8 64 20 55 Z" fill="#111827" stroke="#000" stroke-width="3"/><ellipse cx="44" cy="44" rx="14" ry="7" fill="#4b5563" transform="rotate(-20 44 44)"/><ellipse cx="62" cy="60" rx="10" ry="4" fill="#7c3aed" opacity=".55"/></svg>`,
+  c:`<svg viewBox="0 0 100 100"><rect x="14" y="80" width="72" height="12" rx="4" fill="#ea580c" stroke="#7c2d12" stroke-width="4"/><path d="M50 8 L74 82 L26 82 Z" fill="#f97316" stroke="#7c2d12" stroke-width="4" stroke-linejoin="round"/><path d="M41 36 L59 36 L64 52 L36 52 Z" fill="#fff"/><path d="M33 62 L67 62 L70 72 L30 72 Z" fill="#fff"/></svg>`,
+  s:`<svg viewBox="0 0 100 100"><rect x="3" y="3" width="94" height="94" rx="6" fill="#1e293b" stroke="#0f172a" stroke-width="4"/><rect x="12" y="14" width="76" height="16" rx="3" fill="#334155"/><rect x="12" y="42" width="76" height="16" rx="3" fill="#334155"/><rect x="12" y="70" width="76" height="16" rx="3" fill="#334155"/><circle class="blink" cx="22" cy="22" r="4" fill="#4ade80"/><circle class="blink" style="animation-delay:.6s" cx="22" cy="50" r="4" fill="#22d3ee"/><circle class="blink" style="animation-delay:1.2s" cx="22" cy="78" r="4" fill="#f472b6"/><path d="M36 22h44M36 50h44M36 78h44" stroke="#64748b" stroke-width="3" stroke-dasharray="4 4"/></svg>`,
+  h:`<svg viewBox="0 0 100 100"><rect x="3" y="3" width="94" height="94" rx="10" fill="#facc15"/><rect x="3" y="3" width="94" height="94" rx="10" fill="none" stroke="#1f2937" stroke-width="7" stroke-dasharray="12 10"/><rect x="13" y="13" width="74" height="74" rx="8" fill="#020617"/><rect x="13" y="13" width="74" height="22" rx="8" fill="#1e293b"/></svg>`,
+  pad:`<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" fill="rgba(56,189,248,.18)" stroke="#0ea5e9" stroke-width="5" stroke-dasharray="10 7"/><circle cx="50" cy="50" r="26" fill="none" stroke="#38bdf8" stroke-width="3" opacity=".7"/></svg>`,
+  star:(on)=>`<svg viewBox="0 0 100 100"><path d="M50 6 L62 37 L95 38 L69 59 L78 92 L50 73 L22 92 L31 59 L5 38 L38 37 Z" fill="${on?'#fde047':'rgba(255,255,255,.18)'}" stroke="${on?'#a16207':'rgba(255,255,255,.3)'}" stroke-width="5" stroke-linejoin="round"/></svg>`,
+  bug:`<svg viewBox="0 0 100 100"><path d="M30 30 L18 16 M70 30 L82 16" stroke="#111" stroke-width="5" stroke-linecap="round"/><circle cx="50" cy="30" r="14" fill="#111"/><ellipse cx="50" cy="60" rx="34" ry="32" fill="#ef4444" stroke="#111" stroke-width="5"/><path d="M50 30 V92" stroke="#111" stroke-width="5"/><circle cx="34" cy="52" r="7" fill="#111"/><circle cx="66" cy="52" r="7" fill="#111"/><circle cx="36" cy="74" r="6" fill="#111"/><circle cx="64" cy="74" r="6" fill="#111"/></svg>`,
+  then:`<svg viewBox="0 0 100 100"><path d="M20 50 H78 M58 28 L80 50 L58 72" stroke="#fff" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  diploma:`<svg viewBox="0 0 100 100"><rect x="8" y="18" width="84" height="62" rx="6" fill="#fffbeb" stroke="#a16207" stroke-width="4"/><path d="M20 34h60M20 46h44M20 58h36" stroke="#d97706" stroke-width="5" stroke-linecap="round"/><circle cx="72" cy="66" r="14" fill="#ef4444" stroke="#7f1d1d" stroke-width="3"/><path d="M64 78 L60 96 L70 90 L72 98 L76 80" fill="#ef4444" stroke="#7f1d1d" stroke-width="3" stroke-linejoin="round"/><path d="M72 58 l3 6 6 1 -4 4 1 6 -6-3 -6 3 1-6 -4-4 6-1z" fill="#fde047"/></svg>`,
+  guest:`<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" fill="#e0e7ff"/><text x="50" y="66" font-size="48" text-anchor="middle" font-family="Fredoka,sans-serif" font-weight="700" fill="#4338ca">?</text></svg>`
+};
+const goalArt=n=>ART[NIVS[n-1].goal];
+const ICON={
+  map:`<svg viewBox="0 0 100 100"><rect x="10" y="10" width="34" height="34" rx="8" fill="#fff"/><rect x="56" y="10" width="34" height="34" rx="8" fill="#fff"/><rect x="10" y="56" width="34" height="34" rx="8" fill="#fff"/><rect x="56" y="56" width="34" height="34" rx="8" fill="#fff"/></svg>`,
+  back:`<svg viewBox="0 0 100 100"><path d="M60 16 L26 50 L60 84" stroke="#fff" stroke-width="14" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  speaker:`<svg viewBox="0 0 100 100"><path d="M12 38 H30 L52 18 V82 L30 62 H12 Z" fill="#fff" stroke="#fff" stroke-width="4" stroke-linejoin="round"/><path d="M64 34 Q74 50 64 66 M74 24 Q92 50 74 76" stroke="#fff" stroke-width="8" fill="none" stroke-linecap="round"/></svg>`,
+  mute:`<svg viewBox="0 0 100 100"><path d="M12 38 H30 L52 18 V82 L30 62 H12 Z" fill="#fff" stroke="#fff" stroke-width="4" stroke-linejoin="round"/><path d="M64 36 L90 64 M90 36 L64 64" stroke="#fca5a5" stroke-width="9" stroke-linecap="round"/></svg>`,
+  restart:`<svg viewBox="0 0 100 100"><path d="M78 56 A30 30 0 1 1 66 26" stroke="#fff" stroke-width="11" fill="none" stroke-linecap="round"/><path d="M56 8 L82 26 L54 40 Z" fill="#fff" stroke="#fff" stroke-width="4" stroke-linejoin="round"/></svg>`,
+  play:`<svg viewBox="0 0 100 100"><path d="M30 14 L86 50 L30 86 Z" fill="#fff" stroke="#fff" stroke-width="8" stroke-linejoin="round"/></svg>`,
+  stop:`<svg viewBox="0 0 100 100"><rect x="22" y="22" width="56" height="56" rx="8" fill="#fff"/></svg>`,
+  step:`<svg viewBox="0 0 100 100"><path d="M18 18 L64 50 L18 82 Z" fill="#fff" stroke="#fff" stroke-width="8" stroke-linejoin="round"/><rect x="70" y="16" width="14" height="68" rx="5" fill="#fff"/></svg>`,
+  undo:`<svg viewBox="0 0 100 100"><path d="M38 18 H86 V82 H38 L8 50 Z" fill="#fff" stroke="#fff" stroke-width="6" stroke-linejoin="round"/><path d="M48 36 L72 64 M72 36 L48 64" stroke="#64748b" stroke-width="9" stroke-linecap="round"/></svg>`,
+  trash:`<svg viewBox="0 0 100 100"><rect x="14" y="20" width="72" height="11" rx="5" fill="#fff"/><rect x="38" y="10" width="24" height="12" rx="4" fill="#fff"/><path d="M22 36 H78 L72 90 H28 Z" fill="#fff"/><path d="M40 46 V80 M60 46 V80" stroke="#be123c" stroke-width="6" stroke-linecap="round"/></svg>`,
+  next:`<svg viewBox="0 0 100 100"><path d="M14 16 L52 50 L14 84 Z M48 16 L86 50 L48 84 Z" fill="#fff" stroke="#fff" stroke-width="6" stroke-linejoin="round"/></svg>`,
+  lock:`<svg viewBox="0 0 100 100"><rect x="20" y="44" width="60" height="46" rx="10" fill="#fff"/><path d="M32 46 V32 a18 18 0 0 1 36 0 V46" stroke="#fff" stroke-width="10" fill="none"/><circle cx="50" cy="66" r="7" fill="#4338ca"/></svg>`,
+  slow:`<svg viewBox="0 0 100 100"><ellipse cx="46" cy="58" rx="30" ry="20" fill="#fff"/><circle cx="82" cy="54" r="10" fill="#fff"/><path d="M26 74 v10 M62 74 v10" stroke="#fff" stroke-width="8" stroke-linecap="round"/><path d="M30 52 h32 M46 40 v32" stroke="#0e7490" stroke-width="4"/></svg>`,
+  fast:`<svg viewBox="0 0 100 100"><path d="M10 50 L42 22 V42 L76 22 V78 L42 58 V78 Z" fill="#fff"/><rect x="80" y="22" width="10" height="56" rx="4" fill="#fff"/></svg>`
+};
+const BI={
+  F:`<svg viewBox="0 0 100 100"><path d="M50 10 L84 48 L62 48 L62 90 L38 90 L38 48 L16 48 Z" fill="#fff"/></svg>`,
+  B:`<svg viewBox="0 0 100 100"><path d="M50 90 L84 52 L62 52 L62 10 L38 10 L38 52 L16 52 Z" fill="#fff"/></svg>`,
+  TL:`<svg viewBox="0 0 100 100"><path d="M72 88 V52 Q72 34 54 34 H34" stroke="#fff" stroke-width="14" fill="none" stroke-linecap="round"/><path d="M40 12 L12 34 L40 56 Z" fill="#fff"/></svg>`,
+  TR:`<svg viewBox="0 0 100 100"><path d="M28 88 V52 Q28 34 46 34 H66" stroke="#fff" stroke-width="14" fill="none" stroke-linecap="round"/><path d="M60 12 L88 34 L60 56 Z" fill="#fff"/></svg>`,
+  J:`<svg viewBox="0 0 100 100"><path d="M14 84 Q30 14 66 30" stroke="#fff" stroke-width="12" fill="none" stroke-linecap="round"/><path d="M58 10 L88 40 L52 50 Z" fill="#fff"/><rect x="40" y="76" width="26" height="12" rx="3" fill="#fff" opacity=".6"/></svg>`,
+  REP:`<svg viewBox="0 0 100 100"><path d="M22 54 A28 28 0 0 1 74 36" stroke="#fff" stroke-width="11" fill="none" stroke-linecap="round"/><path d="M62 18 L88 36 L62 52 Z" fill="#fff"/><path d="M78 46 A28 28 0 0 1 26 64" stroke="#fff" stroke-width="11" fill="none" stroke-linecap="round"/><path d="M38 82 L12 64 L38 48 Z" fill="#fff"/></svg>`,
+  UNTIL:`<svg viewBox="0 0 100 100"><path d="M24 60 A28 28 0 1 1 64 78" stroke="#fff" stroke-width="11" fill="none" stroke-linecap="round"/><path d="M14 40 L24 68 L44 50 Z" fill="#fff"/><path d="M66 46 V86" stroke="#fff" stroke-width="6"/><path d="M66 46 H90 L84 56 L90 66 H66 Z" fill="#fde047"/></svg>`,
+  IF:`<svg viewBox="0 0 100 100"><path d="M50 8 L92 50 L50 92 L8 50 Z" fill="#fff"/><text x="50" y="66" font-size="44" text-anchor="middle" font-weight="700" font-family="Fredoka,sans-serif" fill="#db2777">?</text></svg>`,
+  C:`<svg viewBox="0 0 100 100"><path d="M50 6 L62 37 L95 38 L69 59 L78 92 L50 73 L22 92 L31 59 L5 38 L38 37 Z" fill="#fff"/></svg>`
+};
+const BLK={
+  F:{lab:'vooruit',col:'#2563eb'}, B:{lab:'achteruit',col:'#0891b2'},
+  TL:{lab:'draai links',col:'#7c3aed'}, TR:{lab:'draai rechts',col:'#7c3aed'},
+  J:{lab:'spring',col:'#ea580c'}, REP:{lab:'herhaal',col:'#16a34a'},
+  UNTIL:{lab:'herhaal tot doel',col:'#0d9488'}, IF:{lab:'als … anders',col:'#db2777'},
+  C:{lab:'functie',col:'#ca8a04'}
+};
+const CONDS={vrij:'pad vrij voor mij',gat:'gat voor mij',muur:'muur voor mij',rv:'rechts vrij',lv:'links vrij'};
+const SYMS=['🍎','🍌','🍓','🍒','🍉','🍋','🥕','🌽','🌻','🌈','⭐','🌙','☀️','⚽','🏀','🎈','🎁','🚗','🚀','🚂','🚲','⛵','✈️','🐶','🐱','🐭','🐰','🦊','🐻','🐼','🐨','🦁','🐸','🐵','🐔','🐧','🐢','🐟','🦋','🐞','🍄','🌵','🎸','🥁','👑','⚓'];
+
+/* ---------- background ---------- */
+function gearPath(cx,cy,ro,ri,n){let d='';const st=Math.PI*2/n;
+  for(let i=0;i<n;i++){const a=i*st;[[a,ri],[a+st*.18,ro],[a+st*.5,ro],[a+st*.68,ri]].forEach(([g,r],j)=>{d+=(i===0&&j===0?'M':'L')+(cx+r*Math.cos(g)).toFixed(1)+' '+(cy+r*Math.sin(g)).toFixed(1)+' ';});}
+  return d+'Z';}
+function buildBG(){
+  let s=`<defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#140f3a"/><stop offset=".55" stop-color="#2e2275"/><stop offset="1" stop-color="#5b3fa8"/></linearGradient>
+   <radialGradient id="planet" cx=".35" cy=".35" r=".7"><stop offset="0" stop-color="#fbcfe8"/><stop offset="1" stop-color="#db2777"/></radialGradient>
+   <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a2163"/><stop offset="1" stop-color="#140f3a"/></linearGradient></defs>
+  <rect width="1600" height="900" fill="url(#sky)"/>`;
+  for(let i=0;i<90;i++)s+=`<circle class="twinkle" style="animation-delay:${rnd(0,3).toFixed(2)}s" cx="${rnd(0,1600).toFixed(0)}" cy="${rnd(0,520).toFixed(0)}" r="${rnd(.8,2.6).toFixed(1)}" fill="#fff"/>`;
+  s+=`<g class="hover"><circle cx="1330" cy="150" r="62" fill="url(#planet)"/><ellipse cx="1330" cy="150" rx="110" ry="22" fill="none" stroke="#f9a8d4" stroke-width="7" opacity=".8" transform="rotate(-15 1330 150)"/></g><circle cx="240" cy="120" r="26" fill="#a5f3fc" opacity=".85"/>`;
+  s+=`<g class="hover" style="animation-duration:3s"><g transform="translate(560 170)"><rect x="-34" y="-12" width="68" height="24" rx="12" fill="#94a3b8" stroke="#334155" stroke-width="3"/><circle cx="-10" cy="0" r="5" fill="#67e8f9"/><circle cx="10" cy="0" r="5" fill="#67e8f9"/><path d="M-40 -18 h26 M14 -18 h26" stroke="#cbd5e1" stroke-width="4" stroke-linecap="round"/></g></g>`;
+  let x=-20;while(x<1620){const w=rnd(70,150),h=rnd(170,380),y=780-h;
+    s+=`<rect x="${x.toFixed(0)}" y="${y.toFixed(0)}" width="${w.toFixed(0)}" height="${h.toFixed(0)}" rx="8" fill="#261d5e"/>`;
+    for(let wy=y+22;wy<760;wy+=34)for(let wx=x+14;wx<x+w-18;wx+=26){if(Math.random()<.45)s+=`<rect ${Math.random()<.2?'class="blink" style="animation-delay:'+rnd(0,2.4).toFixed(2)+'s"':''} x="${wx.toFixed(0)}" y="${wy.toFixed(0)}" width="12" height="16" rx="2" fill="${Math.random()<.5?'#fde68a':'#67e8f9'}" opacity="${rnd(.35,.85).toFixed(2)}"/>`;}
+    x+=w+rnd(4,30);}
+  [[110,250,130],[430,330,150],[860,280,140],[1180,360,160],[1460,240,120]].forEach(([cx,h,w],i)=>{const y=800-h,X=cx-w/2;
+    s+=`<rect x="${X}" y="${y}" width="${w}" height="${h}" rx="18" fill="#3b2f86" stroke="#4c3fa3" stroke-width="4"/><rect x="${X+16}" y="${y+22}" width="${w-32}" height="${w*.42}" rx="12" fill="#1e1b4b"/>
+      <circle class="blink" style="animation-delay:${i*.5}s;animation-duration:4s" cx="${cx-w*.18}" cy="${y+22+w*.21}" r="${w*.09}" fill="#67e8f9"/><circle class="blink" style="animation-delay:${i*.5}s;animation-duration:4s" cx="${cx+w*.18}" cy="${y+22+w*.21}" r="${w*.09}" fill="#67e8f9"/>
+      <path d="M${cx} ${y} V${y-46}" stroke="#a5b4fc" stroke-width="5"/><circle class="blink" style="animation-delay:${i*.3}s" cx="${cx}" cy="${y-50}" r="9" fill="#f43f5e"/>`;});
+  s+=`<rect x="0" y="790" width="1600" height="110" fill="url(#floor)"/><rect x="0" y="818" width="1600" height="16" rx="8" fill="#4c3fa3"/>`;
+  s+=`<path class="spin" d="${gearPath(70,840,150,122,14)}" fill="#3f3293"/><circle cx="70" cy="840" r="46" fill="#241c57"/><path class="spin rev" d="${gearPath(1530,820,120,98,12)}" fill="#3f3293"/><circle cx="1530" cy="820" r="36" fill="#241c57"/>`;
+  $('bg').innerHTML=s;
+}
+
+/* =====================================================================
+   STORE — klas en voortgang via Supabase (met klascode), gast op dit toestel
+   ===================================================================== */
+const CFG=window.ROBBIE_CONFIG||{};
+const SB_URL=String(CFG.supabaseUrl||'').trim(), SB_KEY=String(CFG.supabaseAnonKey||'').trim();
+const LK={code:'rr3-code',cache:'rr3-cache',pending:'rr3-pending',gast:'rr3-gast',cur:'rr3-cur',dev:'rr3-dev'};
+const HAS_LS=(()=>{try{localStorage.setItem('__rr','1');localStorage.removeItem('__rr');return true;}catch(e){return false;}})();
+const MEM={};
+function lget(k,d){try{const v=HAS_LS?localStorage.getItem(k):MEM[k];return v?JSON.parse(v):d;}catch(e){return d;}}
+function lset(k,v){const s=JSON.stringify(v);try{if(HAS_LS)localStorage.setItem(k,s);else MEM[k]=s;}catch(e){MEM[k]=s;}}
+let sb=null;
+function emptyProg(){return {stars:{},first:{},last:0,done:{}};}
+function computeDone(p){p.stars=p.stars||{};p.first=p.first||{};p.done={};
+  [1,2,3].forEach(n=>{const keys=LEVELS[n].map((_,i)=>n+'-'+i);if(keys.every(k=>(p.stars[k]||0)>0))p.done[n]=Math.max(...keys.map(k=>p.first[k]||0))||Date.now();});return p;}
+function progFromRows(rows,ids){const prog={};(ids||[]).forEach(id=>prog[id]=emptyProg());
+  (rows||[]).forEach(v=>{const p=prog[v.leerling_id]||(prog[v.leerling_id]=emptyProg());p.stars[v.sleutel]=+v.sterren;p.first[v.sleutel]=Date.parse(v.eerst)||0;p.last=Math.max(p.last,Date.parse(v.bijgewerkt)||0);});
+  Object.values(prog).forEach(computeDone);return prog;}
+const CODECHARS='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const normCode=c=>String(c||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
+const URLCODE=(()=>{try{return normCode(new URLSearchParams(location.search).get('klas'));}catch(e){return '';}})();
+const Store={
+  status:'idle', fixed:!!(normCode(CFG.klascode)||URLCODE), code:normCode(CFG.klascode)||URLCODE||lget(LK.code,''),
+  klas:null, cfg:{students:[]}, prog:{gast:computeDone(Object.assign(emptyProg(),lget(LK.gast,{})))},
+  pending:lget(LK.pending,[]), dev:Object.assign({sound:true,fast:false,speak:'beg'},lget(LK.dev,{})),
+  listeners:[], onChange(f){this.listeners.push(f);}, emit(){this.listeners.forEach(f=>{try{f();}catch(e){console.error(e);}});},
+  saveDev(){lset(LK.dev,this.dev);},
+  student(id){return this.cfg.students.find(s=>s.id===id);},
+  p(id){if(!this.prog[id])this.prog[id]=emptyProg();return this.prog[id];},
+  applyData(data){
+    this.klas=data.klas||null;
+    this.cfg.students=(data.leerlingen||[]).map(l=>({id:l.id,name:String(l.naam||''),sym:String(l.symbool||'⭐'),niv:+l.niveau||0}));
+    const gast=this.prog.gast;this.prog=progFromRows(data.voortgang,this.cfg.students.map(s=>s.id));this.prog.gast=gast;
+    this.pending.forEach(q=>{const p=this.prog[q.l];if(p){p.stars[q.k]=Math.max(p.stars[q.k]||0,q.s);if(!p.first[q.k])p.first[q.k]=q.t||Date.now();computeDone(p);}});
+  },
+  async load(){
+    if(!sb){this.status=(SB_URL&&SB_KEY)?'offline':'noconfig';this.emit();return;}
+    if(!this.code){this.status='nocode';this.klas=null;this.cfg.students=[];this.emit();return;}
+    if(this.status!=='ok'){this.status='loading';this.emit();}
+    try{
+      const {data,error}=await sb.rpc('rr_klas',{p_code:this.code});
+      if(error)throw error;
+      if(!data){this.status='badcode';this.klas=null;this.cfg.students=[];this.emit();return;}
+      this.applyData(data);this.status='ok';lset(LK.cache,{code:this.code,data});this.emit();this.flush();
+    }catch(e){
+      const c=lget(LK.cache,null);if(c&&c.code===this.code&&c.data)this.applyData(c.data);
+      this.status='offline';this.emit();
+    }
+  },
+  flushing:false,
+  async flush(){
+    if(!sb||this.flushing||!this.pending.length)return;this.flushing=true;const rest=[];
+    for(const q of this.pending){
+      try{const {error}=await sb.rpc('rr_sterren',{p_code:this.code,p_leerling:q.l,p_sleutel:q.k,p_sterren:q.s});
+        if(error){if(error.code)continue;throw error;}}
+      catch(e){rest.push(q);}
+    }
+    this.pending=rest;lset(LK.pending,rest);this.flushing=false;
+  },
+  recordWin(id,key,stars){
+    const p=this.p(id);const n=+key[0];const was=!!p.done[n];
+    p.stars[key]=Math.max(p.stars[key]||0,stars);if(!p.first[key])p.first[key]=Date.now();p.last=Date.now();computeDone(p);
+    if(id==='gast')lset(LK.gast,this.prog.gast);
+    else{this.pending.push({l:id,k:key,s:stars,t:Date.now()});lset(LK.pending,this.pending);this.flush();}
+    this.emit();return !was&&!!p.done[n];
+  },
+  setCode(c){this.code=normCode(c);lset(LK.code,this.code);this.status='idle';this.load();}
+};
+const sidNow=()=>(curSid&&Store.student(curSid))?curSid:'gast';
+
+/* =====================================================================
+   AUDIO & SPEECH
+   ===================================================================== */
+let AC=null;
+function ac(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){return null;}}if(AC.state==='suspended')AC.resume().catch(()=>{});return AC;}
+function tone(f,d=.12,type='sine',vol=.15,delay=0,slide){if(!Store.dev.sound)return;const a=ac();if(!a)return;
+  const t=a.currentTime+delay,o=a.createOscillator(),g=a.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+d);
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+.012);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g).connect(a.destination);o.start(t);o.stop(t+d+.03);}
+const DT={U:659,R:523,D:392,L:440,F:523,B:392,J:784,TL:440,TR:587};
+const SFX={add:d=>tone(DT[d]||600,.11,'triangle',.2),step:d=>{const f=DT[d]||523;tone(f,.08,'square',.05);tone(f*1.5,.08,'square',.045,.08);},
+  bump:()=>tone(170,.38,'sawtooth',.16,0,55),collect:()=>{tone(988,.08,'sine',.2);tone(1319,.16,'sine',.2,.08);},
+  unlock:()=>[523,659,784].forEach((f,i)=>tone(f,.13,'triangle',.18,i*.09)),fail:()=>{tone(392,.18,'triangle',.18);tone(311,.32,'triangle',.18,.2);},
+  win:()=>[523,659,784,1047,784,1047].forEach((f,i)=>tone(f,.17,'triangle',.2,i*.12)),rotate:()=>tone(560,.08,'triangle',.14,0,900),
+  remove:()=>tone(330,.1,'triangle',.14,0,200),turn:()=>tone(700,.07,'sine',.08,0,500),check:r=>tone(r?880:300,.09,'sine',.12),jump:()=>tone(400,.3,'sine',.12,0,1000)};
+let voices=[];function loadVoices(){try{voices=speechSynthesis.getVoices()||[];}catch(e){}}
+try{loadVoices();speechSynthesis.onvoiceschanged=loadVoices;}catch(e){}
+let ttsCap=null, speechTok=0;
+function nlVoice(){return voices.find(v=>/^nl[-_]BE/i.test(v.lang))||voices.find(v=>/^nl/i.test(v.lang));}
+function stopSpeech(){speechTok++;try{speechSynthesis.cancel();}catch(e){}try{ttsCap&&ttsCap.stop();}catch(e){}}
+function webSpeak(text){try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);const v=nlVoice();u.lang=v?v.lang:'nl-BE';if(v)u.voice=v;u.rate=.92;u.pitch=1.12;speechSynthesis.speak(u);}catch(e){}}
+function say(text){
+  if(!Store.dev.sound||!text)return; stopSpeech(); const tok=speechTok;
+  if(!nlVoice() && ttsCap){ ttsCap.speak(text,{language:'nl',rate:.95}).catch(e=>{ if(tok!==speechTok)return; if(e&&e.code==='not_granted')ttsCap=null; if(!e||e.code!=='viewer_stopped')webSpeak(text); }); }
+  else webSpeak(text);
+}
+
+/* =====================================================================
+   NAVIGATION & SCREENS
+   ===================================================================== */
+let curSid=lget(LK.cur,null), curNiv=1, curLvl=0;
+function show(id){['home','nivs','nivmap','game'].forEach(s=>$(s).classList.toggle('on',s===id));
+  document.body.classList.remove('n1','n2','n3'); if(id!=='home') document.body.classList.add('n'+curNiv);
+  if(id==='nivs') document.body.classList.remove('n1','n2','n3');}
+function symHTML(s){return s?esc(s.sym):ART.guest;}
+
+function renderHome(){
+  const st=Store.cfg.students;let h='';
+  st.forEach(s=>{h+=`<button class="kid" data-id="${esc(s.id)}"><div class="sym">${esc(s.sym)}</div><div class="nm">${esc(s.name)}</div></button>`;});
+  h+=`<button class="kid guest" data-id="gast"><div class="sym">${ART.guest}</div><div class="nm">Gast</div></button>`;
+  $('who').innerHTML=h;
+  $('homeSub').textContent=Store.klas?('Wie ben jij? · '+Store.klas.naam):'Wie ben jij?';
+  const H={noconfig:'Leerkracht: vul bovenaan het bestand je Supabase-gegevens in om klassen en voortgang te bewaren. Tot dan kan iedereen spelen als gast.',
+    nocode:'Dit toestel is nog niet gekoppeld aan een klas. Leerkracht: tik op het slotje rechtsboven.',
+    badcode:'De klascode van dit toestel bestaat niet (meer). Leerkracht: koppel het toestel opnieuw via het slotje.',
+    offline:'Geen verbinding met de klasopslag. Sterren worden bewaard zodra de verbinding terug is.'};
+  let hint=H[Store.status]||'';if(Store.status==='loading'&&!st.length)hint='Klas laden…';
+  $('homeHint').innerHTML=hint?`<p class="hint">${esc(hint)}</p>`:'';
+}
+$('who').addEventListener('click',e=>{const b=e.target.closest('.kid');if(!b)return;ac();
+  curSid=b.dataset.id; lset(LK.cur,curSid); SFX.unlock();
+  const s=Store.student(curSid); if(s&&s.niv){ openNiv(s.niv); } else openNivs(); });
+function openNivs(){ renderNivs(); show('nivs'); }
+function renderNivs(){
+  const s=Store.student(curSid); const p=Store.p(sidNow());
+  $('btnPlayer').innerHTML=`<span class="sym">${s?esc(s.sym):ART.guest}</span><span>${s?esc(s.name):'Gast'}</span>`;
+  let h='';
+  NIVS.forEach(nv=>{const done=LEVELS[nv.n].filter((_,i)=>p.stars[nv.n+'-'+i]).length;
+    h+=`<button class="nivcard" data-n="${nv.n}" style="--nc:${nv.color}">
+      ${p.done[nv.n]?`<span class="dip">${ART.diploma}</span>`:''}
+      <div class="dots">${'<i></i>'.repeat(nv.n)}</div>
+      <div class="art">${nv.n===1?ART.battery:nv.n===2?ART.part:ART.chip}</div>
+      <h2>${nv.name}</h2><h3>${nv.title}</h3><div class="age">${nv.age}</div>
+      <div class="pbar"><i style="width:${done/12*100}%"></i></div></button>`;});
+  $('nivCards').innerHTML=h;
+}
+$('nivCards').addEventListener('click',e=>{const b=e.target.closest('.nivcard');if(!b)return;ac();openNiv(+b.dataset.n);});
+$('btnPlayer').addEventListener('click',()=>{renderHome();show('home');Store.load();});
+
+function openNiv(n){ curNiv=n; renderMap(); show('nivmap');
+  const k='rr2-intro-'+n+'-'+(sidNow()); if(!lget(k,false)){ lset(k,true); setTimeout(()=>say(NIVS[n-1].intro),300); } }
+function storyVisual(n,doneCount,anim){
+  if(n===1){ // stad met 12 huizen
+    let s=`<svg viewBox="0 0 360 170"><rect width="360" height="170" rx="16" fill="#0b0a24"/>`;
+    for(let i=0;i<30;i++)s+=`<circle cx="${(i*47)%360}" cy="${(i*29)%60+8}" r="1.4" fill="#fff" opacity=".7"/>`;
+    for(let i=0;i<12;i++){const x=8+i*29,h=48+((i*37)%40),y=160-h,lit=i<doneCount;
+      s+=`<rect x="${x}" y="${y}" width="25" height="${h}" rx="3" fill="${lit?'#4338ca':'#1e1b4b'}"/><path d="M${x-2} ${y} L${x+12.5} ${y-12} L${x+27} ${y} Z" fill="${lit?'#6366f1':'#272463'}"/>`;
+      for(let wy=y+8;wy<154;wy+=13)for(let wx=x+4;wx<x+21;wx+=10)s+=`<rect x="${wx}" y="${wy}" width="6" height="7" rx="1" fill="${lit?'#fde047':'#2b2a55'}" ${lit&&anim?'class="twinkle"':''}/>`;}
+    return s+`<rect x="0" y="160" width="360" height="10" fill="#312e81"/></svg>`;}
+  if(n===2){ const f=doneCount/12;
+    return `<svg viewBox="0 0 360 170"><rect width="360" height="170" rx="16" fill="#0b1640"/><circle cx="300" cy="40" r="22" fill="#e5e7eb"/><circle cx="292" cy="34" r="5" fill="#cbd5e1"/>
+      <g ${anim?'class="rocketgo"':''}><g transform="translate(130 10)">
+      <defs><clipPath id="rf"><rect x="0" y="${150-150*f}" width="100" height="${150*f+2}"/></clipPath></defs>
+      <g fill="none" stroke="#475569" stroke-width="3" stroke-dasharray="6 5"><path d="M50 5 C75 25 80 60 74 110 L26 110 C20 60 25 25 50 5 Z"/><path d="M26 80 L6 120 L26 112 M74 80 L94 120 L74 112"/></g>
+      <g clip-path="url(#rf)"><path d="M50 5 C75 25 80 60 74 110 L26 110 C20 60 25 25 50 5 Z" fill="#f8fafc" stroke="#1e293b" stroke-width="3"/><circle cx="50" cy="48" r="13" fill="#38bdf8" stroke="#1e293b" stroke-width="3"/><path d="M26 80 L6 120 L26 112 Z M74 80 L94 120 L74 112 Z" fill="#ef4444" stroke="#1e293b" stroke-width="3"/><rect x="34" y="110" width="32" height="10" fill="#64748b"/>${anim?'<path d="M36 122 L50 160 L64 122 Z" fill="#f97316"/><path d="M42 122 L50 146 L58 122 Z" fill="#fde047"/>':''}</g></g></g>
+      <text x="20" y="160" fill="#93c5fd" font-size="16" font-family="Fredoka,sans-serif">${doneCount}/12 onderdelen</text></svg>`;}
+  const hp=12-doneCount;
+  return `<svg viewBox="0 0 360 170"><rect width="360" height="170" rx="16" fill="#140a2a"/>
+    <g ${anim?'class="glitchgo"':''}><g transform="translate(180 72)"><path d="M-48 -10 C-50 -50 50 -50 48 -10 C64 10 40 46 0 44 C-40 46 -64 10 -48 -10 Z" fill="#7e22ce" stroke="#3b0764" stroke-width="4"/>
+    <rect x="-56" y="-18" width="22" height="7" fill="#22d3ee" opacity=".8"/><rect x="34" y="6" width="26" height="6" fill="#f0abfc" opacity=".8"/>
+    <circle cx="-17" cy="-8" r="11" fill="#fff"/><circle cx="17" cy="-8" r="11" fill="#fff"/><circle cx="-14" cy="-6" r="5" fill="#111"/><circle cx="20" cy="-6" r="5" fill="#111"/>
+    <path d="M-30 -24 L-6 -16 M30 -24 L6 -16" stroke="#111" stroke-width="5" stroke-linecap="round"/><path d="M-18 18 L-9 12 L0 18 L9 12 L18 18" stroke="#111" stroke-width="4" fill="none"/></g></g>
+    <g transform="translate(60 140)">${Array.from({length:12},(_,i)=>`<rect x="${i*20}" y="0" width="16" height="14" rx="3" fill="${i<hp?'#f43f5e':'#3f3f46'}"/>`).join('')}</g>
+    <text x="60" y="166" fill="#f0abfc" font-size="13" font-family="Fredoka,sans-serif">kracht van de Glitch</text></svg>`;
+}
+function houseSVG(lit,num){return `<svg viewBox="0 0 100 100"><path d="M8 46 L50 10 L92 46 Z" fill="${lit?'#6366f1':'#312e81'}" stroke="#1e1b4b" stroke-width="4" stroke-linejoin="round"/><rect x="16" y="44" width="68" height="50" rx="4" fill="${lit?'#4338ca':'#1e1b4b'}" stroke="#0f0d2e" stroke-width="4"/><rect x="24" y="52" width="16" height="14" rx="2" fill="${lit?'#fde047':'#3b3a6b'}"/><rect x="60" y="52" width="16" height="14" rx="2" fill="${lit?'#fde047':'#3b3a6b'}"/><rect x="38" y="66" width="24" height="28" rx="3" fill="#f8fafc"/><text x="50" y="88" font-size="22" text-anchor="middle" font-weight="700" font-family="Fredoka,sans-serif" fill="#1e1b4b">${num}</text></svg>`;}
+function renderMap(){
+  const nv=NIVS[curNiv-1],p=Store.p(sidNow());
+  $('nivmap').style.setProperty('--nc',nv.color);
+  $('mapTitle').innerHTML=`${esc(nv.name)}<small style="font-size:.45em">${esc(nv.title)}</small>`;
+  const doneCount=LEVELS[curNiv].filter((_,i)=>p.stars[curNiv+'-'+i]).length;
+  $('storyBox').style.setProperty('--nc',nv.color);$('storyBox').classList.toggle('beg',curNiv===1);
+  $('storyVis').innerHTML=storyVisual(curNiv,doneCount,false);
+  $('storyText').textContent = curNiv===1? '' : nv.intro;
+  $('storyBox').querySelector('.stxt').style.display=curNiv===1?'none':'';
+  const nextUp=LEVELS[curNiv].findIndex((_,i)=>!p.stars[curNiv+'-'+i]);
+  let h='';
+  LEVELS[curNiv].forEach((L,i)=>{const s=p.stars[curNiv+'-'+i]||0;
+    h+=`<button class="lv${curNiv===1?' house':''}${i===nextUp?' nextup':''}" data-i="${i}" style="--nc:${nv.color}" aria-label="Level ${i+1}">
+      <div class="num">${curNiv===1?houseSVG(s>0,i+1):i+1}</div><div class="stars">${ART.star(s>0)}${ART.star(s>1)}${ART.star(s>2)}</div>
+      ${L.pre?`<span class="bug">${ART.bug}</span>`:''}${L.nieuw&&curNiv>1?`<span class="nw">nieuw</span>`:''}</button>`;});
+  $('lvGrid').innerHTML=h;
+  $('mapDip').classList.toggle('on',!!p.done[curNiv]);
+}
+$('lvGrid').addEventListener('click',e=>{const b=e.target.closest('.lv');if(!b)return;ac();startLevel(curNiv,+b.dataset.i);});
+$('btnBackNivs').addEventListener('click',()=>{stopSpeech();const s=Store.student(curSid);if(s&&s.niv){renderHome();show('home');}else openNivs();});
+$('btnStory').addEventListener('click',()=>{ac();say(NIVS[curNiv-1].intro);});
+$('btnMapDip').addEventListener('click',()=>openDiploma(sidNow(),curNiv));
+$('btnMapFinale').addEventListener('click',()=>showFinale());
+
+/* =====================================================================
+   GAME
+   ===================================================================== */
+const board=$('board'),game=$('game');
+let L=null,P={main:[],fn:[]},S=null,busy=false,stopFlag=false,hasRun=false,cs=80,stepGen=null,stepDone=false;
+let robotEl=null,goalEl=null,boltEls=[],cursor={lid:'m',idx:0},lists={},parentOf={};
+const spd=()=>Store.dev.fast?.4:1;
+
+function piece(cls,x,y,html){const d=document.createElement('div');d.className='pc '+cls;d.style.setProperty('--x',x);d.style.setProperty('--y',y);d.innerHTML=html||'';board.appendChild(d);return d;}
+function setPos(el,x,y){el.style.setProperty('--x',x);el.style.setProperty('--y',y);}
+function buildBoard(){
+  board.innerHTML='';board.style.setProperty('--c',L.c);
+  for(let y=0;y<L.r;y++)for(let x=0;x<L.c;x++){const t=document.createElement('div');t.className='tile'+((x+y)%2?' b':'');board.appendChild(t);}
+  piece('startpad',L.s[0],L.s[1],ART.pad);
+  L.obs.forEach(o=>piece('obs '+o[2],o[0],o[1],ART[o[2]]));
+  goalEl=piece('goal',L.g[0],L.g[1],goalArt(L.niv));
+  boltEls=L.bolts.map(b=>piece('bolt',b[0],b[1],ART.bolt));
+  robotEl=piece('robot',L.s[0],L.s[1],`<div class="face"></div><div class="rb"><img src="${ROBBIE}" alt="Robbie"></div>`);
+  layout();
+}
+function layout(){if(!L||!game.classList.contains('on'))return;const r=$('boardWrap').getBoundingClientRect();
+  cs=Math.max(26,Math.floor(Math.min((r.width-40)/L.c,(r.height-40)/L.r,124)));
+  board.style.setProperty('--cs',cs+'px');board.style.width=(L.c*cs)+'px';board.style.height=(L.r*cs)+'px';}
+window.addEventListener('resize',()=>{if(robotEl)robotEl.style.transition='none';layout();requestAnimationFrame(()=>{if(robotEl)robotEl.style.transition='';});});
+
+function renderGoalStrip(){let h='';L.bolts.forEach((b,i)=>{h+=`<span class="gb ${S&&(S.mask&(1<<i))?'':'miss'}">${ART.bolt}</span>`;});
+  if(L.bolts.length)h+=`<span class="then">${ART.then}</span>`;h+=`<span>${goalArt(L.niv)}</span>`;$('goalStrip').innerHTML=h;}
+function renderCount(){if(L.mode==='abs')return;const n=countBlocks(P.main)+countBlocks(P.fn);const el=$('blkCount');
+  el.innerHTML=`${BI.REP.replace('#fff','#c7d2fe')}<span>${n}${L.max<24?' / '+L.max:''}</span>`;el.classList.toggle('over',L.max<24&&n>=L.max);}
+
+function startLevel(n,i){
+  curNiv=n;curLvl=i;L=LEVELS[n][i];stopSpeech();
+  P={main:L.mode==='abs'?[...(L.pre||'')].map(mk):parseProg(L.pre||''),fn:parseProg(L.preFn||'')};
+  cursor={lid:'m',idx:P.main.length};hasRun=false;busy=false;stopFlag=false;stepGen=null;
+  game.classList.toggle('tree',L.mode!=='abs');game.classList.remove('busy');
+  const nv=NIVS[n-1];$('lvlNum').textContent=i+1;$('lvlNum').style.setProperty('--nc',nv.color);
+  $('bugTag').classList.toggle('on',!!L.pre);$('blkCount').classList.toggle('on',L.mode!=='abs');
+  $('taskText').textContent=L.say||'';$('fnWrap').style.display=L.fn?'':'none';
+  show('game');buildBoard();renderPalette();renderProgram();resetAll();requestAnimationFrame(layout);
+  const sp=Store.dev.speak; if(sp==='all'||(sp==='beg'&&n===1)) say(L.say||'');
+  updatePlayBtn();
+}
+
+/* ----- palette ----- */
+function renderPalette(){
+  if(L.mode==='abs'){document.querySelectorAll('.arw').forEach(b=>{b.innerHTML=arrowSVG(b.dataset.d);});return;}
+  $('palette').innerHTML=L.blocks.map(t=>{const isNew=L.nieuw===t||(L.nieuw==='IF'&&t==='UNTIL');
+    return `<button class="pb${isNew?' isnew':''}" data-t="${t}" style="--bc:${BLK[t].col}"><span class="ic">${BI[t]}</span>${BLK[t].lab}${isNew?'<span class="new">nieuw</span>':''}</button>`;}).join('');
+}
+$('palette').addEventListener('click',e=>{const b=e.target.closest('.pb');if(!b||busy)return;ac();insertNode(b.dataset.t);});
+document.querySelectorAll('.arw').forEach(b=>b.addEventListener('click',()=>{if(busy)return;ac();addAbs(b.dataset.d);}));
+
+/* ----- beginner strip ----- */
+function addAbs(d){if(P.main.length>=L.slots){$('progBox').classList.remove('shakeit');void $('progBox').offsetWidth;$('progBox').classList.add('shakeit');SFX.bump();return;}
+  P.main.push(mk(d));SFX.add(d);edited(P.main.length-1);}
+function renderStrip(addedAt){let h='';for(let i=0;i<L.slots;i++){if(i<P.main.length)h+=`<button class="blk ${P.main[i].t}${i===addedAt?' added':''}" data-i="${i}" data-id="${P.main[i].id}">${arrowSVG(P.main[i].t)}</button>`;else h+=`<div class="eslot"></div>`;}$('strip').innerHTML=h;}
+$('strip').addEventListener('click',e=>{const b=e.target.closest('.blk');if(!b||busy)return;ac();const i=+b.dataset.i;
+  P.main[i].t={U:'R',R:'D',D:'L',L:'U'}[P.main[i].t];SFX.rotate();edited();const nb=$('strip').querySelector(`.blk[data-i="${i}"]`);if(nb)nb.classList.add('added');});
+
+/* ----- tree editor ----- */
+function indexLists(){lists={m:P.main,f:P.fn};parentOf={};
+  const walk=(list,lid)=>list.forEach((n,i)=>{parentOf[n.id]={lid,idx:i};if(n.body){lists[n.id+'b']=n.body;walk(n.body,n.id+'b');}if(n.els){lists[n.id+'e']=n.els;walk(n.els,n.id+'e');}});
+  walk(P.main,'m');walk(P.fn,'f');
+  if(!lists[cursor.lid]){cursor={lid:'m',idx:P.main.length};}
+  cursor.idx=Math.max(0,Math.min(cursor.idx,lists[cursor.lid].length));}
+function nodeHTML(n){
+  const b=BLK[n.t]; const sel=(parentOf[n.id]&&parentOf[n.id].lid===cursor.lid&&parentOf[n.id].idx===cursor.idx-1)?' sel':'';
+  if(n.t==='REP') return `<div class="nd cont${sel}" data-id="${n.id}" style="--bc:${b.col}"><div class="hd"><span class="ic">${BI.REP}</span>herhaal <button class="chip cntc" data-id="${n.id}">${n.n}</button> keer <span class="itb" data-it="${n.id}"></span></div><div class="bd">${listHTML(n.body,n.id+'b')}</div></div>`;
+  if(n.t==='UNTIL') return `<div class="nd cont${sel}" data-id="${n.id}" style="--bc:${b.col}"><div class="hd"><span class="ic">${BI.UNTIL}</span>herhaal tot bij <span style="width:26px;height:26px;display:inline-block">${goalArt(L.niv)}</span><span class="itb" data-it="${n.id}"></span></div><div class="bd">${listHTML(n.body,n.id+'b')}</div></div>`;
+  if(n.t==='IF') return `<div class="nd cont${sel}" data-id="${n.id}" style="--bc:${b.col}"><div class="hd"><span class="ic">${BI.IF}</span>als <button class="chip condc" data-id="${n.id}">${CONDS[n.c]}</button><span class="res" data-res="${n.id}"></span></div><div class="bd">${listHTML(n.body,n.id+'b')}</div><div class="mid" data-id="${n.id}">anders</div><div class="bd">${listHTML(n.els,n.id+'e')}</div></div>`;
+  return `<div class="nd prim${sel}" data-id="${n.id}" style="--bc:${b.col}"><span class="ic">${BI[n.t]}</span>${b.lab}</div>`;
+}
+function listHTML(list,lid){let h='';list.forEach((n,i)=>{if(cursor.lid===lid&&cursor.idx===i)h+='<div class="cur"></div>';h+=nodeHTML(n);});
+  if(cursor.lid===lid&&cursor.idx===list.length)h+='<div class="cur"></div>';
+  if(lid!=='m'&&lid!=='f')h+=`<button class="addslot" data-lid="${lid}" aria-label="Hier toevoegen">+</button>`;
+  return h;}
+function renderProgram(addedAt){
+  if(L.mode==='abs'){renderStrip(addedAt);return;}
+  indexLists();
+  $('codeMain').innerHTML=listHTML(P.main,'m')+(P.main.length?'':'<div class="emptyhint">Tik op de blokken hierboven om een programma te maken.</div>')+`<button class="addslot" data-lid="m" aria-label="Achteraan toevoegen">+</button>`;
+  if(L.fn)$('codeFn').innerHTML=listHTML(P.fn,'f')+`<button class="addslot" data-lid="f" aria-label="Achteraan toevoegen in functie">+</button>`;
+  renderCount();
+  const c=$('codeWrap').querySelector('.cur');if(c&&c.scrollIntoView){try{c.scrollIntoView({block:'nearest'});}catch(e){}}
+}
+function codeClick(e){
+  if(busy)return;ac();
+  const cnt=e.target.closest('.cntc');if(cnt){const n=findNode(cnt.dataset.id);n.n=n.n>=10?2:n.n+1;SFX.rotate();edited();return;}
+  const cd=e.target.closest('.condc');if(cd){const n=findNode(cd.dataset.id);const cl=L.conds;n.c=cl[(cl.indexOf(n.c)+1)%cl.length];SFX.rotate();edited();return;}
+  const sl=e.target.closest('.addslot');if(sl){cursor={lid:sl.dataset.lid,idx:lists[sl.dataset.lid].length};SFX.turn();renderProgram();return;}
+  const md=e.target.closest('.mid');if(md){cursor={lid:md.dataset.id+'e',idx:0};SFX.turn();renderProgram();return;}
+  const nd=e.target.closest('.prim, .cont>.hd');if(nd){const id=nd.closest('.nd').dataset.id;const p=parentOf[id];cursor={lid:p.lid,idx:p.idx+1};SFX.turn();renderProgram();}
+}
+$('codeMain').addEventListener('click',codeClick);$('codeFn').addEventListener('click',codeClick);
+function findNode(id){let f=null;const w=l=>l.forEach(n=>{if(n.id===id)f=n;if(n.body)w(n.body);if(n.els)w(n.els);});w(P.main);w(P.fn);return f;}
+function insertNode(t){
+  if(t==='C'&&cursor.lid!=='m'&&isInFn(cursor.lid)){say("Een functie kan zichzelf niet oproepen. Zet dit blok in het programma.");shakeEl($('codeWrap'));return;}
+  if(countBlocks(P.main)+countBlocks(P.fn)>=L.max){SFX.bump();shakeEl($('blkCount'));say(`Je mag maar ${L.max} blokken gebruiken.`);return;}
+  const n=mk(t);if(t==='IF')n.c=L.conds[0];
+  lists[cursor.lid].splice(cursor.idx,0,n);
+  if(n.body)cursor={lid:n.id+'b',idx:0};else cursor.idx++;
+  SFX.add(t);edited();
+}
+function isInFn(lid){if(lid==='f')return true;if(lid==='m')return false;const id=lid.slice(0,-1);const p=parentOf[id];return p?isInFn(p.lid):false;}
+function shakeEl(el){el.classList.remove('shakeit');void el.offsetWidth;el.classList.add('shakeit');}
+function deleteAtCursor(){
+  if(L.mode==='abs'){if(!P.main.length)return;P.main.pop();SFX.remove();edited();return;}
+  const list=lists[cursor.lid];
+  if(cursor.idx>0){list.splice(cursor.idx-1,1);cursor.idx--;SFX.remove();edited();return;}
+  if(cursor.lid!=='m'&&cursor.lid!=='f'){const p=parentOf[cursor.lid.slice(0,-1)];if(p){cursor={lid:p.lid,idx:p.idx+1};SFX.turn();renderProgram();}}
+}
+function edited(addedAt){stepGen=null;renderProgram(addedAt);resetAll();}
+
+/* ----- robot state & visuals ----- */
+function marks(activeId,errId){
+  document.querySelectorAll('#game .active,#game .err').forEach(e=>e.classList.remove('active','err'));
+  if(L.mode==='abs'){if(activeId)$('strip').querySelector(`[data-id="${activeId}"]`)?.classList.add('active');if(errId)$('strip').querySelector(`[data-id="${errId}"]`)?.classList.add('err');return;}
+  if(activeId)document.querySelector(`#codeWrap .nd[data-id="${activeId}"]`)?.classList.add('active');
+  if(errId)document.querySelector(`#codeWrap .nd[data-id="${errId}"]`)?.classList.add('err');
+}
+function clearRunMarks(){document.querySelectorAll('.itb,.res').forEach(e=>{e.classList.remove('on','y','n');e.textContent='';});marks(null,null);}
+function setFacing(){const f=robotEl.querySelector('.face');f.style.transform=`rotate(${S.rot}deg)`;const img=robotEl.querySelector('img');if(S.d===3)img.style.transform='scaleX(-1)';else if(S.d===1)img.style.transform='';}
+function resetRobot(){
+  S=newState(L,P.fn);
+  robotEl.style.transition='none';robotEl.querySelector('.face').style.transition='none';setPos(robotEl,S.x,S.y);robotEl.classList.remove('dance');
+  robotEl.querySelector('img').style.transform='';setFacing();void robotEl.offsetWidth;robotEl.style.transition='';robotEl.querySelector('.face').style.transition='';
+  boltEls.forEach(b=>b.classList.remove('got','flash'));goalEl.className='pc goal'+(L.bolts.length?' locked':'');
+  board.querySelectorAll('.dot,.bubble,.scan').forEach(d=>d.remove());clearRunMarks();renderGoalStrip();
+}
+function resetAll(){resetRobot();stepGen=null;stepDone=false;updateHints();}
+function updateHints(){document.querySelectorAll('.pulse').forEach(e=>e.classList.remove('pulse'));if(busy)return;
+  if(L.niv===1&&curLvl===0&&P.main.length<L.opt&&!hasRun)document.querySelector('.arw.R').classList.add('pulse');
+  else if((L.niv===1&&curLvl===0&&P.main.length>=L.opt&&!hasRun)||(L.pre&&!hasRun))$('btnPlay').classList.add('pulse');}
+function bubble(txt,bad){const b=document.createElement('div');b.className='bubble'+(bad?' bad':'');b.textContent=txt;robotEl.appendChild(b);setTimeout(()=>b.remove(),2500);}
+function setBusy(b){busy=b;game.classList.toggle('busy',b);if(b)document.querySelectorAll('.pulse').forEach(e=>e.classList.remove('pulse'));updatePlayBtn();}
+function updatePlayBtn(){const b=$('btnPlay');const running=busy&&!stepRunning;b.classList.toggle('stop',running);b.innerHTML=running?ICON.stop:ICON.play;b.setAttribute('aria-label',running?'Stop':'Start');}
+let stepRunning=false;
+
+const BUMPTXT={wall:"Au! Daar is de rand van het veld.",obs:"Botsing! Daar staat iets in de weg.",hole:"Stop! Daar is een gat. Robbie moet erover springen.",high:"Te hoog! Over kisten en kasten kan Robbie niet springen.",land:"Robbie kan daar niet landen."};
+async function animate(ev){
+  const k=ev.k, sp=spd();
+  robotEl.style.setProperty('--mv',(.36*sp)+'s');robotEl.querySelector('.face').style.setProperty('--tv',(.28*sp)+'s');
+  if(k==='iter'){const el=document.querySelector(`[data-it="${ev.nd.id}"]`);if(el){el.classList.add('on');el.textContent=ev.n?ev.i+' / '+ev.n:'ronde '+ev.i;}marks(ev.nd.id,null);await sleep(140*sp);return;}
+  if(k==='call'){marks(ev.nd.id,null);SFX.turn();await sleep(260*sp);return;}
+  if(k==='check'){marks(ev.nd.id,null);const r=document.querySelector(`[data-res="${ev.nd.id}"]`);if(r){r.className='res on '+(ev.res?'y':'n');r.textContent=ev.res?'ja':'nee';}
+    const [cx,cy]=ev.cell;if(cx>=0&&cy>=0&&cx<L.c&&cy<L.r){const sc=piece('scan'+(ev.res?'':' no'),cx,cy,'');setTimeout(()=>sc.remove(),Math.max(300,500*sp));}
+    SFX.check(ev.res);await sleep(420*sp);return;}
+  if(k==='turn'){marks(ev.nd.id,null);setFacing();SFX.turn();await sleep(380*sp);return;}
+  if(k==='tired'){marks(null,ev.nd.id);bubble('Zzz',true);SFX.fail();say("Robbie loopt in rondjes en stopt nooit. Dat is een oneindige lus! Zoek de fout.");return;}
+  if(k==='bump'){marks(null,ev.nd.id);const [dx,dy]=DV[ev.dir];
+    robotEl.querySelector('.rb').animate([{transform:'none'},{transform:`translate(${dx*cs*.38}px,${dy*cs*.38}px)`},{transform:'rotate(-10deg)'},{transform:'rotate(10deg)'},{transform:'none'}],{duration:520,easing:'ease-out'});
+    SFX.bump();bubble('!',true);say(BUMPTXT[ev.reason]);await sleep(520);return;}
+  if(k==='move'){marks(ev.nd.id,null);
+    if(L.mode==='abs'){const img=robotEl.querySelector('img');if(ev.dir===3)img.style.transform='scaleX(-1)';else if(ev.dir===1)img.style.transform='';}
+    const dot=piece('dot',ev.from[0],ev.from[1],'<i></i>');dot.style.setProperty('--col',L.mode==='abs'?`var(--${'URDL'[ev.dir]})`:BLK[ev.nd.t].col);
+    setPos(robotEl,ev.to[0],ev.to[1]);
+    robotEl.querySelector('.rb').animate([{transform:'translateY(0)'},{transform:`translateY(${ev.jump?-55:-14}%)`},{transform:'translateY(0)'}],{duration:(ev.jump?420:380)*sp,easing:'ease-in-out'});
+    if(ev.jump)SFX.jump();else SFX.step(ev.nd.t);
+    await sleep((ev.jump?470:410)*sp);
+    if(ev.got>=0){boltEls[ev.got].classList.add('got');SFX.collect();renderGoalStrip();if(S.mask===L.full){goalEl.classList.remove('locked');goalEl.classList.add('unlock');setTimeout(SFX.unlock,180);}}
+    await sleep(Math.max(0,(L.mode==='abs'?200:120)*sp));return;}
+}
+function notArrived(){marks(null,null);
+  if(S.x===L.g[0]&&S.y===L.g[1]&&S.mask!==L.full){boltEls.forEach((b,i)=>{if(!(S.mask&(1<<i)))b.classList.add('flash');});say("Robbie is er, maar hij is een bout vergeten!");}
+  else say(L.niv===1?"Robbie is nog niet bij de batterij. Probeer nog eens!":"Het programma is klaar, maar Robbie is nog niet bij het doel. Probeer nog eens!");
+  bubble('?');SFX.fail();}
+async function run(){
+  if(busy&&!stepRunning){stopFlag=true;return;}
+  if(busy)return;ac();
+  if(!P.main.length){say(L.niv===1?"Leg eerst pijlen voor Robbie.":"Maak eerst een programma.");if(L.mode==='abs')document.querySelectorAll('.arw').forEach(a=>a.classList.add('pulse'));return;}
+  stopSpeech();resetRobot();stepGen=null;hasRun=true;stopFlag=false;setBusy(true);await sleep(200);
+  const gen=G_list(P.main,S,L);
+  for(const ev of gen){if(stopFlag||!game.classList.contains('on')){setBusy(false);resetRobot();return;}await animate(ev);}
+  await finishRun();
+}
+async function finishRun(){
+  if(S.res==='win'){await win();return;}
+  setBusy(false);if(S.res!=='bump'&&S.res!=='tired')notArrived();
+}
+async function step(){
+  if(busy)return;ac();
+  if(!P.main.length){say("Maak eerst een programma.");return;}
+  if(!stepGen||stepDone){resetRobot();S.fn=P.fn;stepGen=G_list(P.main,S,L);stepDone=false;}
+  hasRun=true;stepRunning=true;setBusy(true);
+  while(true){const r=stepGen.next();if(r.done){stepDone=true;break;}await animate(r.value);if(['move','turn','bump','tired','check'].includes(r.value.k))break;}
+  stepRunning=false;
+  if(S.done||stepDone){stepDone=true;if(S.res==='win'){await win();return;}setBusy(false);if(S.res!=='bump'&&S.res!=='tired')notArrived();return;}
+  setBusy(false);
+}
+$('btnPlay').addEventListener('click',run);$('btnStep').addEventListener('click',step);
+$('btnUndo').addEventListener('click',()=>{if(busy)return;ac();deleteAtCursor();});
+$('btnClear').addEventListener('click',()=>{if(busy)return;ac();if(!P.main.length&&!P.fn.length)return;P.main.length=0;P.fn.length=0;cursor={lid:'m',idx:0};SFX.remove();edited();});
+$('btnRestart').addEventListener('click',()=>{if(busy)return;ac();startLevel(curNiv,curLvl);});
+$('btnSay').addEventListener('click',()=>{ac();say(L.say||'');});
+$('btnMap').addEventListener('click',()=>{stopFlag=true;stopSpeech();busy=false;game.classList.remove('busy');renderMap();show('nivmap');});
+$('btnSpeed').addEventListener('click',()=>{Store.dev.fast=!Store.dev.fast;Store.saveDev();$('btnSpeed').innerHTML=Store.dev.fast?ICON.fast:ICON.slow;});
+
+async function win(){
+  marks(null,null);goalEl.classList.remove('locked','unlock');goalEl.classList.add('charged');robotEl.classList.add('dance');SFX.win();confetti();
+  say(L.niv===1?"Joepie! Robbie heeft de batterij!":L.niv===2?"Super! Weer een raketonderdeel gevonden!":"Chip hersteld! De Glitch wordt zwakker!");
+  let n;if(L.mode==='abs'){const len=P.main.length;n=len<=L.opt?3:(len<=L.opt+2?2:1);}
+  else{const b=countBlocks(P.main)+countBlocks(P.fn);n=b<=L.best?3:(b<=L.best+2?2:1);}
+  const newlyDone=Store.recordWin(sidNow(),curNiv+'-'+curLvl,n);
+  await sleep(1300);if(!game.classList.contains('on'))return;
+  const bs=$('bigStars');bs.innerHTML='';
+  for(let k=0;k<3;k++){const w=document.createElement('div');w.innerHTML=ART.star(k<n);const sv=w.firstChild;sv.style.animationDelay=(k*.25)+'s';bs.appendChild(sv);setTimeout(()=>{if(k<n)tone(784+k*200,.12,'triangle',.18);},k*250+200);}
+  const p=Store.p(sidNow());
+  winNextAction = newlyDone ? 'finale' : (curLvl<LEVELS[curNiv].length-1 ? 'next' : (p.done[curNiv]?'finale':'map'));
+  $('wNext').innerHTML = winNextAction==='finale'?ART.diploma:ICON.next;
+  $('winOv').classList.add('on');
+}
+let winNextAction='next';
+function confetti(){const cols=['#fde047','#22c55e','#3b82f6','#f97316','#a855f7','#ec4899','#67e8f9'];
+  for(let i=0;i<60;i++){const c=document.createElement('div');c.className='conf';c.style.left=rnd(0,100)+'vw';c.style.background=cols[i%cols.length];c.style.animationDuration=rnd(1.8,3.2)+'s';c.style.animationDelay=rnd(0,.6)+'s';document.body.appendChild(c);setTimeout(()=>c.remove(),4200);}}
+$('wNext').addEventListener('click',()=>{ac();$('winOv').classList.remove('on');setBusy(false);
+  if(winNextAction==='finale')showFinale();else if(winNextAction==='next')startLevel(curNiv,curLvl+1);else{renderMap();show('nivmap');}});
+$('wRetry').addEventListener('click',()=>{ac();$('winOv').classList.remove('on');setBusy(false);resetAll();});
+$('wMap').addEventListener('click',()=>{$('winOv').classList.remove('on');setBusy(false);renderMap();show('nivmap');});
+
+function showFinale(){const nv=NIVS[curNiv-1];renderMap();show('nivmap');
+  $('finVis').innerHTML=storyVisual(curNiv,12,true);$('finTitle').textContent=nv.finTitle;$('finText').textContent=nv.outro;
+  $('finOv').classList.add('on');confetti();setTimeout(confetti,1200);SFX.win();say(nv.outro);}
+$('finDip').addEventListener('click',()=>{$('finOv').classList.remove('on');openDiploma(sidNow(),curNiv);});
+$('finMap').addEventListener('click',()=>{$('finOv').classList.remove('on');renderMap();});
+
+/* keyboard */
+document.addEventListener('keydown',e=>{
+  if(!game.classList.contains('on')||document.querySelector('.ov.on')||$('tPanel').classList.contains('on'))return;
+  if(e.target&&/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;
+  const m={ArrowUp:'U',ArrowRight:'R',ArrowDown:'D',ArrowLeft:'L'}[e.key];
+  if(m&&L.mode==='abs'){e.preventDefault();if(!busy)addAbs(m);}
+  else if(m&&L.mode!=='abs'){e.preventDefault();const t={U:'F',D:'B',L:'TL',R:'TR'}[m];if(!busy&&L.blocks.includes(t))insertNode(t);}
+  else if(e.key==='Enter'||e.key===' '){e.preventDefault();run();}
+  else if(e.key==='Backspace'){e.preventDefault();$('btnUndo').click();}
+  else if(e.key==='s'||e.key==='S'){step();}
+});
+
+/* =====================================================================
+   DIPLOMA
+   ===================================================================== */
+let dipCtx=null, robbieImg=new Image(); robbieImg.src=ROBBIE;
+function loadJsPDF(){return new Promise((res,rej)=>{if(window.jspdf)return res(window.jspdf);const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';s.onload=()=>window.jspdf?res(window.jspdf):rej();s.onerror=rej;document.head.appendChild(s);});}
+function wrapText(ctx,text,x,y,maxW,lh){const words=text.split(' ');let line='';for(const w of words){const t=line?line+' '+w:w;if(ctx.measureText(t).width>maxW&&line){ctx.fillText(line,x,y);y+=lh;line=w;}else line=t;}ctx.fillText(line,x,y);return y;}
+async function drawDiploma(name,n,starCount,date){
+  try{await document.fonts.load('700 60px Fredoka');await document.fonts.load('500 30px Fredoka');}catch(e){}
+  const nv=NIVS[n-1],W=1754,H=1240,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
+  const F=(w,s)=>`${w} ${s}px Fredoka, "Trebuchet MS", sans-serif`;
+  x.fillStyle='#fffdf5';x.fillRect(0,0,W,H);
+  x.strokeStyle=nv.color;x.lineWidth=26;x.strokeRect(40,40,W-80,H-80);x.strokeStyle='#1e1b4b';x.lineWidth=6;x.strokeRect(78,78,W-156,H-156);
+  // gears in corners
+  const gear=(cx,cy,r,col)=>{x.save();x.fillStyle=col;x.beginPath();const p=new Path2D(gearPath(cx,cy,r,r*.8,12));x.fill(p);x.fillStyle='#fffdf5';x.beginPath();x.arc(cx,cy,r*.35,0,7);x.fill();x.restore();};
+  gear(150,150,60,nv.color);gear(W-150,150,60,nv.color);gear(150,H-150,60,nv.color);gear(W-150,H-150,60,nv.color);
+  x.textAlign='center';x.fillStyle='#1e1b4b';x.font=F(700,130);x.fillText('DIPLOMA',W/2+120,250);
+  x.font=F(500,40);x.fillStyle='#4338ca';x.fillText('Robbie in Robotland · '+nv.dipTitle,W/2+120,315);
+  // robbie
+  if(robbieImg.complete){const ih=560,iw=ih*robbieImg.width/robbieImg.height;x.drawImage(robbieImg,170,330,iw,ih);}
+  x.font=F(500,38);x.fillStyle='#334155';x.fillText('Dit diploma is voor',W/2+120,420);
+  x.font=F(700,104);x.fillStyle=nv.color;x.strokeStyle='#1e1b4b';x.lineWidth=3;x.fillText(name||'__________',W/2+120,540);x.strokeText(name||'',W/2+120,540);
+  x.font=F(500,38);x.fillStyle='#1e293b';
+  wrapText(x,`heeft niveau ${n} · ${nv.name} – “${nv.title}” helemaal opgelost en kan nu:`,W/2+120,625,1000,50);
+  x.textAlign='left';x.font=F(500,36);let y=730;
+  nv.concepts.forEach(t=>{x.fillStyle=nv.color;x.beginPath();x.arc(700,y-12,12,0,7);x.fill();x.fillStyle='#1e293b';x.fillText(t,730,y);y+=58;});
+  x.textAlign='center';x.font=F(600,40);x.fillStyle='#a16207';x.fillText(`★ ${starCount} van de 36 sterren`,W/2+120,y+40);
+  // footer
+  x.font=F(500,32);x.fillStyle='#334155';x.textAlign='left';x.fillText(date,200,H-190);
+  x.strokeStyle='#94a3b8';x.lineWidth=3;x.beginPath();x.moveTo(1150,H-200);x.lineTo(1560,H-200);x.stroke();
+  x.textAlign='center';x.fillText('juf / meester',1355,H-160);
+  // stamp
+  x.save();x.translate(1500,H-300);x.rotate(-.15);x.strokeStyle='#dc2626';x.lineWidth=8;x.beginPath();x.arc(0,0,92,0,7);x.stroke();x.lineWidth=3;x.beginPath();x.arc(0,0,78,0,7);x.stroke();
+  x.fillStyle='#dc2626';x.font=F(700,30);x.fillText('ROBBIE',0,-10);x.font=F(600,24);x.fillText('GOEDGEKEURD',0,24);x.restore();
+  return c;
+}
+async function openDiplomaFor(name,n,p,editable){
+  const starCount=LEVELS[n].reduce((a,_,i)=>a+(p.stars[n+'-'+i]||0),0);
+  const t=p.done&&p.done[n]?new Date(p.done[n]):new Date();
+  dipCtx={n,name:name||'',starCount,date:t.toLocaleDateString('nl-BE',{day:'numeric',month:'long',year:'numeric'})};
+  $('dipNameRow').style.display=editable?'flex':'none';$('dipName').value=dipCtx.name;$('dipMsg').textContent='';
+  $('dipPdf').innerHTML=`${ART.diploma.replace('<svg','<svg width="30" height="30"')} Download PDF`;$('dipPrint').textContent='Afdrukken';
+  await refreshDiploma();$('dipOv').classList.add('on');SFX.unlock();
+}
+function openDiploma(sid,n){const s=Store.student(sid);openDiplomaFor(s?s.name:'',n,Store.p(sid),!s);}
+async function refreshDiploma(){const c=await drawDiploma(dipCtx.name,dipCtx.n,dipCtx.starCount,dipCtx.date);dipCtx.canvas=c;const u=c.toDataURL('image/jpeg',.9);$('dipImg').src=u;$('printImg').src=u;}
+$('dipNameOk').addEventListener('click',()=>{dipCtx.name=$('dipName').value.trim().slice(0,40);refreshDiploma();});
+$('dipName').addEventListener('keydown',e=>{if(e.key==='Enter')$('dipNameOk').click();});
+$('dipClose').addEventListener('click',()=>$('dipOv').classList.remove('on'));
+$('dipPdf').addEventListener('click',async()=>{
+  const fname=`Diploma Robbie - ${(dipCtx.name||'leerling').replace(/[^\w\- À-ÿ]/g,'')} - niveau ${dipCtx.n}`;
+  $('dipMsg').textContent='Diploma wordt klaargemaakt…';
+  try{const {jsPDF}=await loadJsPDF();const pdf=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+    pdf.addImage(dipCtx.canvas.toDataURL('image/jpeg',.92),'JPEG',0,0,297,210);pdf.save(fname+'.pdf');}
+  catch(e){try{const a=document.createElement('a');a.href=dipCtx.canvas.toDataURL('image/png');a.download=fname+'.png';document.body.appendChild(a);a.click();a.remove();}catch(err){}}
+  $('dipMsg').textContent='Zie je geen download verschijnen? Kies Afdrukken, of open het HTML-bestand rechtstreeks op je computer en maak het diploma vanuit het leerkrachtenpaneel.';
+});
+$('dipPrint').addEventListener('click',()=>{try{window.print();}catch(e){}
+  $('dipMsg').textContent='Kies A4, liggend. Verschijnt er geen afdrukvenster? Open het HTML-bestand rechtstreeks op je computer.';});
+
+/* =====================================================================
+   LEERKRACHT: aanmelden (Supabase Auth) + paneel
+   ===================================================================== */
+const Teacher={
+  user:null, classes:[], sel:null, students:[], prog:{},
+  async session(){if(!sb)return null;try{const {data}=await sb.auth.getSession();this.user=data&&data.session?data.session.user:null;}catch(e){this.user=null;}return this.user;},
+  async isTeacher(){try{const {data,error}=await sb.rpc('rr_is_leerkracht');return !error&&data===true;}catch(e){return false;}},
+  async login(email,pw){const {data,error}=await sb.auth.signInWithPassword({email,password:pw});if(error)throw error;this.user=data.user;},
+  async logout(){try{await sb.auth.signOut();}catch(e){}this.user=null;},
+  async loadClasses(){
+    const {data,error}=await sb.from('klassen').select('*').order('naam');if(error)throw error;this.classes=data||[];
+    if(!this.sel||!this.classes.find(c=>c.id===this.sel))this.sel=((this.classes.find(c=>c.code===Store.code))||this.classes[0]||{}).id||null;
+  },
+  async loadSel(){
+    this.students=[];this.prog={};if(!this.sel)return;
+    const {data:st,error}=await sb.from('leerlingen').select('*').eq('klas_id',this.sel).order('volgorde').order('naam');if(error)throw error;
+    this.students=st||[];const ids=this.students.map(s=>s.id);let rows=[];
+    if(ids.length){const {data:v,error:e2}=await sb.from('voortgang').select('*').in('leerling_id',ids);if(e2)throw e2;rows=v||[];}
+    this.prog=progFromRows(rows,ids);
+  },
+  async refresh(){await this.loadClasses();await this.loadSel();},
+  selClass(){return this.classes.find(c=>c.id===this.sel)||null;},
+  async afterChange(){await this.refresh();const c=this.selClass();if(c&&c.code===Store.code)Store.load();renderPanel();}
+};
+const HOSTED=/^https?:$/.test(location.protocol);
+function classLink(code){return location.origin+location.pathname+'?klas='+code;}
+function newCode(){let s='';const a=new Uint32Array(6);(window.crypto||{getRandomValues:x=>x.map(()=>Math.random()*1e9)}).getRandomValues(a);a.forEach(v=>s+=CODECHARS[v%CODECHARS.length]);return s;}
+function tMsg(t,bad){const el=$('tMsg');if(!el)return;el.textContent=t||'';el.className='tmsg'+(bad?' bad':'');if(t)setTimeout(()=>{if(el.textContent===t)el.textContent='';},5000);}
+async function tRun(fn,okText){try{await fn();if(okText)tMsg(okText);}catch(e){tMsg('Dat lukte niet: '+((e&&e.message)||'onbekende fout'),true);}}
+
+/* ---- aanmelden ---- */
+function loginOpen(html){$('loginBody').innerHTML=html;$('loginOv').classList.add('on');}
+async function openTeacher(){
+  if(!sb){
+    loginOpen(`<p class="lp">${SB_URL&&SB_KEY?'Er is geen verbinding met Supabase. Controleer je internetverbinding en de gegevens bovenaan het bestand.':'Supabase is nog niet ingesteld. Vul bovenaan het HTML-bestand je <b>Project URL</b> en <b>anon/publishable key</b> in (zie de installatiegids). Tot dan kan iedereen spelen als gast.'}</p><div class="lrow"><button class="btn gray" data-lclose>Sluiten</button></div>`);return;}
+  if(await Teacher.session()&&await Teacher.isTeacher()){openPanel();return;}
+  loginOpen(`<p class="lp">Meld je aan met je leerkracht-account.</p>
+    <input class="lin" id="lEmail" type="email" autocomplete="username" placeholder="e-mailadres">
+    <input class="lin" id="lPw" type="password" autocomplete="current-password" placeholder="wachtwoord">
+    <p class="lmsg" id="lMsg"></p>
+    <div class="lrow"><button class="btn gray" data-lclose>Annuleren</button><button class="btn blue" id="lGo">Aanmelden</button></div>`);
+  setTimeout(()=>{try{$('lEmail').focus();}catch(e){}},50);
+}
+$('loginOv').addEventListener('click',async e=>{
+  if(e.target.closest('[data-lclose]')){$('loginOv').classList.remove('on');return;}
+  if(e.target.id==='lGo'){
+    const em=$('lEmail').value.trim(),pw=$('lPw').value;if(!em||!pw){$('lMsg').textContent='Vul je e-mailadres en wachtwoord in.';return;}
+    $('lMsg').textContent='Even geduld…';
+    try{await Teacher.login(em,pw);}catch(err){$('lMsg').textContent='Aanmelden mislukt. Controleer je e-mailadres en wachtwoord.';return;}
+    if(!(await Teacher.isTeacher())){await Teacher.logout();$('lMsg').textContent='Dit account staat niet in de lijst leerkrachten. Voeg je e-mailadres toe in het SQL-script (stap 5).';return;}
+    $('loginOv').classList.remove('on');openPanel();
+  }
+});
+$('loginOv').addEventListener('keydown',e=>{if(e.key==='Enter'&&$('lGo'))$('lGo').click();});
+$('btnTeach').addEventListener('click',()=>{ac();openTeacher();});
+
+/* ---- paneel ---- */
+let tTab='prog',tTimer=null;
+async function openPanel(){
+  $('tPanel').classList.add('on');$('tWho').textContent=Teacher.user?Teacher.user.email:'';
+  $('tBody').innerHTML='<p class="muted">Laden…</p>';renderTabs();
+  await tRun(()=>Teacher.refresh());renderPanel();
+  clearInterval(tTimer);tTimer=setInterval(async()=>{
+    if(!$('tPanel').classList.contains('on')){clearInterval(tTimer);return;}
+    if(tTab!=='prog'||document.querySelector('#tBody input:focus,#tBody textarea:focus,#tBody select:focus'))return;
+    try{await Teacher.loadSel();renderPanel();}catch(e){}
+  },30000);
+}
+function closePanel(){$('tPanel').classList.remove('on');clearInterval(tTimer);Store.load();}
+$('tClose').addEventListener('click',closePanel);
+$('tRefresh').addEventListener('click',()=>tRun(async()=>{await Teacher.refresh();renderPanel();},'Bijgewerkt.'));
+$('tLogout').addEventListener('click',async()=>{await Teacher.logout();closePanel();});
+const TABS=[['prog','Voortgang'],['klas','Klassen & leerlingen'],['dev','Dit toestel'],['uitleg','Uitleg']];
+function renderTabs(){$('tTabs').innerHTML=TABS.map(([k,l])=>`<button data-t="${k}" class="${tTab===k?'on':''}">${l}</button>`).join('');}
+$('tTabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;tTab=b.dataset.t;renderPanel();});
+function classSelHTML(){
+  if(!Teacher.classes.length)return '';
+  return `<div class="tsel"><label>Klas: <select class="tin" id="tSel">${Teacher.classes.map(c=>`<option value="${esc(c.id)}"${c.id===Teacher.sel?' selected':''}>${esc(c.naam)}</option>`).join('')}</select></label>
+    <span class="muted">klascode <b class="code">${esc((Teacher.selClass()||{}).code||'')}</b></span></div>`;
+}
+function renderPanel(){
+  renderTabs();const b=$('tBody');
+  if(tTab==='prog')b.innerHTML=classSelHTML()+progHTML();
+  else if(tTab==='klas')b.innerHTML=klassenHTML()+(Teacher.sel?classSelHTML()+leerlingenHTML():'');
+  else if(tTab==='dev')b.innerHTML=devHTML();
+  else b.innerHTML=uitlegHTML();
+}
+function fmtAgo(t){if(!t)return '—';const d=Date.now()-t;if(d<6e4)return 'net nu';if(d<36e5)return Math.round(d/6e4)+' min geleden';if(d<864e5)return Math.round(d/36e5)+' u geleden';return new Date(t).toLocaleDateString('nl-BE');}
+function progHTML(){
+  if(!Teacher.classes.length)return `<div class="tcard"><h2>Nog geen klassen</h2><p>Maak eerst een klas aan in het tabblad <b>Klassen &amp; leerlingen</b>.</p></div>`;
+  const st=Teacher.students;
+  let h=`<div class="tcard"><h2>Voortgang · ${esc((Teacher.selClass()||{}).naam||'')}</h2>
+   <p class="muted">Elk vakje is een level: lichtgroen = 1 ster, groen = 2, donkergroen = 3 sterren. 🎓 = niveau volledig opgelost: klik om het diploma te maken. Deze lijst ververst elke 30 seconden.</p>`;
+  if(!st.length)return h+`<p>Deze klas heeft nog geen leerlingen.</p></div>`;
+  h+=`<div style="overflow:auto"><table class="prog"><thead><tr><th>Leerling</th>${NIVS.map(nv=>`<th style="color:${nv.color}">${nv.n}. ${nv.name}</th>`).join('')}<th>Laatst</th><th></th></tr></thead><tbody>`;
+  st.forEach(s=>{const p=Teacher.prog[s.id]||emptyProg();
+    h+=`<tr><td style="white-space:nowrap"><span style="font-size:22px;vertical-align:middle">${esc(s.symbool)}</span> ${esc(s.naam)}</td>`;
+    NIVS.forEach(nv=>{const arr=LEVELS[nv.n].map((_,i)=>p.stars[nv.n+'-'+i]||0);const done=arr.filter(Boolean).length;
+      h+=`<td><span class="sq">${arr.map((x,i)=>`<i class="s${x}" title="Level ${i+1}: ${x} ster(ren)"></i>`).join('')}</span><span class="cnt">${done}/12</span>${p.done[nv.n]?` <button class="tb sm gold" data-dip="${esc(s.id)}" data-n="${nv.n}">🎓 diploma</button>`:''}</td>`;});
+    h+=`<td class="muted" style="white-space:nowrap">${fmtAgo(p.last)}</td><td><button class="tb sm gray" data-reset="${esc(s.id)}">sterren wissen</button></td></tr>`;});
+  return h+`</tbody></table></div></div>`;
+}
+function klassenHTML(){
+  let h=`<div class="tcard"><h2>Klassen</h2><p class="muted">Elke klas krijgt een eigen <b>klascode</b>. Een toestel koppel je aan een klas via het tabblad <b>Dit toestel</b>, of je zet de code vast in het bestand (aanrader voor Google Sites: één pagina per klas).</p>`;
+  Teacher.classes.forEach(c=>{h+=`<div class="krow"><input class="tin" data-kname="${esc(c.id)}" value="${esc(c.naam)}" maxlength="60" style="flex:1;min-width:160px">
+    <span class="code big">${esc(c.code)}</span><button class="tb sm" data-kopen="${esc(c.id)}">leerlingen</button>${HOSTED?`<button class="tb sm green" data-klink="${esc(c.code)}">kopieer link</button>`:''}<button class="tb sm red" data-kdel="${esc(c.id)}">verwijder klas</button></div>`;});
+  if(HOSTED)h+=`<p class="muted">Met <b>kopieer link</b> krijg je de link voor die klas, bv. <code>${esc(classLink('ABC123'))}</code>. In Google Sites: Invoegen → Insluiten → <b>Via URL</b>, plak de link. Toestellen die via die pagina spelen, zijn dan meteen aan de juiste klas gekoppeld.</p>`;
+  h+=`<div class="krow" style="border:0"><input class="tin" id="kNew" placeholder="Naam van een nieuwe klas, bv. 2de kleuterklas" maxlength="60" style="flex:1;min-width:200px"><button class="tb green" id="kNewGo">+ Klas aanmaken</button></div></div>`;
+  return h;
+}
+function leerlingenHTML(){
+  const c=Teacher.selClass();if(!c)return '';
+  let h=`<div class="tcard"><h2>Leerlingen · ${esc(c.naam)}</h2><p class="muted">Geef elke leerling een naam en een symbool: kleuters herkennen hun symbool op het startscherm. Met <b>niveau</b> bepaal je welk niveau een leerling meteen te zien krijgt (“vrij” = zelf kiezen).</p>`;
+  Teacher.students.forEach(s=>{h+=`<div class="krow"><button class="symbtn" data-sym="${esc(s.id)}">${esc(s.symbool)}</button>
+    <input class="tin" data-name="${esc(s.id)}" value="${esc(s.naam)}" maxlength="40" style="flex:1;min-width:160px">
+    <select class="tin" data-niv="${esc(s.id)}"><option value="0"${s.niveau==0?' selected':''}>niveau: vrij</option>${NIVS.map(nv=>`<option value="${nv.n}"${s.niveau==nv.n?' selected':''}>${nv.n}. ${nv.name}</option>`).join('')}</select>
+    <button class="tb sm red" data-del="${esc(s.id)}">verwijder</button></div><div class="symgrid" data-grid="${esc(s.id)}" style="display:none"></div>`;});
+  h+=`<div style="margin-top:12px"><button class="tb green" id="sAdd">+ Leerling toevoegen</button></div>
+   <h3>Namenlijst plakken</h3><p class="muted">Eén naam per regel. Symbolen worden automatisch gekozen; je kan ze daarna aanpassen. Tip: voornamen volstaan.</p>
+   <textarea class="tin" id="sPaste" placeholder="Amira&#10;Bas&#10;Chloé"></textarea><div><button class="tb" id="sPasteGo">Toevoegen aan ${esc(c.naam)}</button></div></div>`;
+  return h;
+}
+function devHTML(){
+  const linked=Store.klas?esc(Store.klas.naam)+` <span class="code">${esc(Store.code)}</span>`:(Store.code?`code <span class="code">${esc(Store.code)}</span> (niet gevonden)`:'nog geen klas');
+  let h=`<div class="tcard"><h2>Dit toestel</h2><p>Gekoppeld aan: <b>${linked}</b></p>`;
+  if(Store.fixed)h+=URLCODE&&!normCode(CFG.klascode)?`<p class="muted">De klascode komt uit de link van deze pagina (<code>?klas=${esc(URLCODE)}</code>). Voor een andere klas gebruik je de link van die klas.</p>`:`<p class="muted">De klascode staat vast in het bestand van deze pagina. Wil je een andere klas? Pas <code>klascode</code> bovenaan het bestand aan, of maak een aparte pagina per klas.</p>`;
+  else{
+    h+=`<div class="krow" style="border:0"><select class="tin" id="dSel">${Teacher.classes.map(c=>`<option value="${esc(c.code)}"${c.code===Store.code?' selected':''}>${esc(c.naam)} (${esc(c.code)})</option>`).join('')}</select>
+      <button class="tb green" id="dLink"${Teacher.classes.length?'':' disabled'}>Koppel dit toestel</button>${Store.code?'<button class="tb gray" id="dUnlink">Ontkoppel</button>':''}</div>`;
+    if(!HAS_LS)h+=`<p class="status local">Dit toestel kan de koppeling niet onthouden: opslag in de browser is hier geblokkeerd (dat gebeurt soms in een ingesloten Google Site). Zet daarom de klascode vast bovenaan het bestand: <code>klascode: "${esc((Teacher.selClass()||{}).code||'ABC123')}"</code>.</p>`;
+  }
+  h+=`</div><div class="tcard"><h2>Voorlezen</h2><p class="muted">Robbie leest de opdracht voor bij de start van een level. De luidsprekerknop werkt altijd.</p>
+   <select class="tin" id="dSpeak"><option value="beg"${Store.dev.speak==='beg'?' selected':''}>Automatisch voorlezen in Beginner</option><option value="all"${Store.dev.speak==='all'?' selected':''}>Automatisch voorlezen in alle niveaus</option><option value="none"${Store.dev.speak==='none'?' selected':''}>Nooit automatisch voorlezen</option></select></div>
+  <div class="tcard"><h2>Gast op dit toestel</h2><p class="muted">Wie als gast speelt, bewaart sterren alleen op dit toestel.</p><button class="tb gray" id="dGast">Sterren van gast wissen</button></div>`;
+  return h;
+}
+function uitlegHTML(){
+  return `<div class="tcard"><h2>Robbie in Robotland – leerlijn computationeel denken</h2>
+  <p>Drie niveaus, elk met een eigen verhaal en 12 levels. Nieuwe programmeerconcepten komen stap voor stap. Een <b>nieuw</b>-label toont waar een nieuw blok verschijnt, het 🐞-symbool een foutje-level (debuggen).</p>
+  <h3>1 · Beginner – Stroomstoring in Robotstad (2de kleuterklas – 1ste leerjaar)</h3>
+  <ul><li>Volledig zonder tekst: pijlen in vier richtingen, Robbie leest de opdracht voor.</li><li>Levels 1–4 één richting, 5–6 twee richtingen, 8–9 obstakels, 11–12 bouten verzamelen. Foutje-levels 7 en 10: tik op een pijl om hem te draaien.</li></ul>
+  <h3>2 · Gemiddeld – De raket van Robbie (2de – 4de leerjaar)</h3>
+  <ul><li>Bewegen vanuit Robbie: vooruit, draai links/rechts, achteruit (level 6), spring over gaten (level 7). Herhaal-lus vanaf level 9. Foutje-levels 5 en 11.</li></ul>
+  <h3>3 · Uitdagend – Robbie tegen de Glitch (5de – 6de leerjaar)</h3>
+  <ul><li>Geneste herhalingen (2–3), functies (4–6), als … anders en herhaal tot doel (7–12), oneindige lus (9), doolhof met rechterhandregel (11), eindopdracht (12).</li></ul>
+  <h3>Knoppen</h3>
+  <ul><li>Groen ▶ start (■ stop tijdens het uitvoeren) · geel: één stap · grijs: wis het blok vóór de gele cursor · rood: alles wissen · blauw: snelheid.</li>
+  <li>In de blokeditor toont de gele streep waar een nieuw blok komt. Tik op een blok om de streep erachter te zetten, of op + in een herhaling of als-blok.</li></ul>
+  <h3>Diploma</h3><p>Na 12 opgeloste levels verschijnt een diploma. Kies <b>Download PDF</b> of <b>Afdrukken</b>. Blokkeert de Google Site het downloaden, open dan het HTML-bestand rechtstreeks op je computer, meld je aan en maak het diploma vanuit dit paneel: de voortgang staat in Supabase, dus alles is daar ook zichtbaar.</p>
+  <h3>Privacy</h3><p>Namen en sterren staan in jouw Supabase-project. Leerlingen kunnen de klaslijst alleen ophalen met de klascode; alleen aangemelde leerkrachten uit de tabel <code>leerkrachten</code> kunnen alles zien en wijzigen. Gebruik bij voorkeur alleen voornamen en volg de afspraken van je school.</p></div>`;
+}
+$('tBody').addEventListener('click',async e=>{
+  const t=e.target.closest('button');if(!t)return;const d=t.dataset;
+  if(d.dip){const s=Teacher.students.find(x=>x.id===d.dip);if(s)openDiplomaFor(s.naam,+d.n,Teacher.prog[s.id]||emptyProg(),false);return;}
+  if(d.reset){if(!d.armed){d.armed='1';t.textContent='zeker?';return;}await tRun(async()=>{const {error}=await sb.from('voortgang').delete().eq('leerling_id',d.reset);if(error)throw error;await Teacher.afterChange();},'Sterren gewist.');return;}
+  if(d.kopen){Teacher.sel=d.kopen;await tRun(()=>Teacher.loadSel());renderPanel();return;}
+  if(d.klink){const link=classLink(d.klink);try{await navigator.clipboard.writeText(link);tMsg('Link gekopieerd: '+link);}catch(err){tMsg('Kopieer deze link: '+link);}return;}
+  if(d.kdel){if(!d.armed){d.armed='1';t.textContent='zeker? alles van deze klas wordt gewist';return;}await tRun(async()=>{const {error}=await sb.from('klassen').delete().eq('id',d.kdel);if(error)throw error;if(Teacher.sel===d.kdel)Teacher.sel=null;await Teacher.afterChange();},'Klas verwijderd.');return;}
+  if(t.id==='kNewGo'){const naam=$('kNew').value.trim();if(!naam){tMsg('Geef de klas een naam.',true);return;}
+    await tRun(async()=>{let lastErr=null;for(let i=0;i<4;i++){const {data,error}=await sb.from('klassen').insert({naam:naam.slice(0,60),code:newCode()}).select().single();if(!error){Teacher.sel=data.id;await Teacher.afterChange();return;}lastErr=error;if(error.code!=='23505')break;}throw lastErr;},'Klas aangemaakt.');return;}
+  if(d.del){if(!d.armed){d.armed='1';t.textContent='zeker?';return;}await tRun(async()=>{const {error}=await sb.from('leerlingen').delete().eq('id',d.del);if(error)throw error;await Teacher.afterChange();});return;}
+  if(d.sym){const g=document.querySelector(`[data-grid="${d.sym}"]`);const used=new Set(Teacher.students.map(s=>s.symbool));
+    g.innerHTML=SYMS.map(y=>`<button data-pick="${esc(d.sym)}" data-y="${y}" class="${used.has(y)?'taken':''}">${y}</button>`).join('');g.style.display=g.style.display==='none'?'grid':'none';return;}
+  if(d.pick){await tRun(async()=>{const {error}=await sb.from('leerlingen').update({symbool:d.y}).eq('id',d.pick);if(error)throw error;await Teacher.afterChange();});return;}
+  if(t.id==='sAdd'){await tRun(async()=>{const {error}=await sb.from('leerlingen').insert({klas_id:Teacher.sel,naam:'Nieuwe leerling',symbool:freeSym(),volgorde:Teacher.students.length});if(error)throw error;await Teacher.afterChange();});return;}
+  if(t.id==='sPasteGo'){const names=$('sPaste').value.split(/\n/).map(s=>s.trim()).filter(Boolean).slice(0,60);if(!names.length)return;
+    await tRun(async()=>{const used=new Set(Teacher.students.map(s=>s.symbool));const rows=names.map((n,i)=>{const sym=SYMS.find(y=>!used.has(y))||SYMS[i%SYMS.length];used.add(sym);return {klas_id:Teacher.sel,naam:n.slice(0,40),symbool:sym,volgorde:Teacher.students.length+i};});
+      const {error}=await sb.from('leerlingen').insert(rows);if(error)throw error;await Teacher.afterChange();},`${names.length} leerling(en) toegevoegd.`);return;}
+  if(t.id==='dLink'){Store.setCode($('dSel').value);renderPanel();tMsg('Dit toestel is gekoppeld.');return;}
+  if(t.id==='dUnlink'){Store.setCode('');renderPanel();return;}
+  if(t.id==='dGast'){Store.prog.gast=emptyProg();lset(LK.gast,Store.prog.gast);tMsg('Gast-sterren gewist.');return;}
+});
+$('tBody').addEventListener('change',async e=>{const t=e.target,d=t.dataset;
+  if(t.id==='tSel'){Teacher.sel=t.value;await tRun(()=>Teacher.loadSel());renderPanel();return;}
+  if(d.kname){await tRun(async()=>{const {error}=await sb.from('klassen').update({naam:t.value.trim().slice(0,60)||'Klas'}).eq('id',d.kname);if(error)throw error;await Teacher.afterChange();},'Bewaard.');return;}
+  if(d.name){await tRun(async()=>{const {error}=await sb.from('leerlingen').update({naam:t.value.trim().slice(0,40)||'Leerling'}).eq('id',d.name);if(error)throw error;await Teacher.afterChange();},'Bewaard.');return;}
+  if(d.niv){await tRun(async()=>{const {error}=await sb.from('leerlingen').update({niveau:+t.value}).eq('id',d.niv);if(error)throw error;await Teacher.afterChange();},'Bewaard.');return;}
+  if(t.id==='dSpeak'){Store.dev.speak=t.value;Store.saveDev();tMsg('Bewaard.');}
+});
+function freeSym(){const used=new Set(Teacher.students.map(s=>s.symbool));return SYMS.find(s=>!used.has(s))||SYMS[Math.floor(Math.random()*SYMS.length)];}
+
+/* =====================================================================
+   INIT
+   ===================================================================== */
+function renderSoundBtns(){[$('btnSound'),$('btnSound2')].forEach(b=>{b.innerHTML=Store.dev.sound?ICON.speaker:ICON.mute;b.classList.toggle('off',!Store.dev.sound);});}
+[$('btnSound'),$('btnSound2')].forEach(b=>b.addEventListener('click',()=>{Store.dev.sound=!Store.dev.sound;Store.saveDev();renderSoundBtns();if(Store.dev.sound){ac();SFX.unlock();}else stopSpeech();}));
+$('btnTeach').innerHTML=ICON.lock;$('btnMap').innerHTML=ICON.map;$('btnBackNivs').innerHTML=ICON.back;$('btnStory').innerHTML=ICON.speaker;$('btnSay').innerHTML=ICON.speaker;$('btnRestart').innerHTML=ICON.restart;
+$('btnStep').innerHTML=ICON.step;$('btnUndo').innerHTML=ICON.undo;$('btnClear').innerHTML=ICON.trash;$('btnSpeed').innerHTML=Store.dev.fast?ICON.fast:ICON.slow;
+$('wRetry').innerHTML=ICON.restart;$('wMap').innerHTML=ICON.map;$('bugTag').innerHTML=ART.bug.replace(/^<svg[^>]*>|<\/svg>$/g,'');
+$('btnMapDip').innerHTML=`${ART.diploma.replace('<svg','<svg width="30" height="30"')} Diploma`;$('btnMapFinale').innerHTML=`${ICON.play.replace('<svg','<svg width="26" height="26"')} Einde van het verhaal`;
+$('finDip').innerHTML=`${ART.diploma.replace('<svg','<svg width="30" height="30"')} Mijn diploma`;$('finMap').innerHTML='Terug';
+document.querySelectorAll('img[data-robbie]').forEach(i=>{i.src=ROBBIE;});
+updatePlayBtn();buildBG();renderSoundBtns();
+try{if(window.supabase&&SB_URL&&SB_KEY)sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:HAS_LS,autoRefreshToken:true,detectSessionInUrl:false}});}catch(e){sb=null;}
+Store.onChange(()=>{if($('home').classList.contains('on'))renderHome();if($('nivs').classList.contains('on'))renderNivs();});
+renderHome();Store.load();
+window.addEventListener('online',()=>Store.load());
+window.__T={NIVS,LEVELS,simulate,parseProg,countBlocks,startLevel,Store,Teacher,openDiploma,drawDiploma,showFinale};
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Robbie Robot · leerapps</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  body{margin:0;min-height:100vh;font-family:'Fredoka',system-ui,sans-serif;color:#fff;
+    background:radial-gradient(circle at 80% 10%,#4c1d95 0,transparent 40%),linear-gradient(#140f3a,#2e2275 60%,#5b3fa8);}
+  main{max-width:960px;margin:0 auto;padding:40px 20px}
+  h1{font-size:clamp(32px,6vw,56px);margin:0 0 6px;text-shadow:0 4px 0 #4338ca}
+  p.sub{color:#c7d2fe;font-size:19px;margin:0 0 30px}
+  .apps{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px}
+  a.app{display:block;text-decoration:none;color:#fff;background:rgba(20,14,60,.8);border:3px solid var(--c);border-radius:24px;padding:20px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  a.app:hover{transform:translateY(-3px)}
+  a.app h2{margin:6px 0 4px;font-size:26px}
+  a.app p{margin:0;color:#e0e7ff;font-family:system-ui,sans-serif;line-height:1.4}
+  .tag{display:inline-block;background:var(--c);border-radius:999px;padding:2px 12px;font-size:14px}
+</style>
+</head>
+<body>
+<main>
+  <h1>Robbie Robot</h1>
+  <p class="sub">Leerapps voor het basisonderwijs, met Robbie als gids.</p>
+  <div class="apps">
+    <a class="app" href="robotland/" style="--c:#22c55e">
+      <span class="tag">computationeel denken</span>
+      <h2>Robbie in Robotland</h2>
+      <p>Programmeer Robbie met pijlen en blokken: algoritmes, debuggen, herhalingen, functies en als-dan. Drie niveaus, van de 2de kleuterklas tot het 6de leerjaar.</p>
+    </a>
+  </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,1493 @@
+<!DOCTYPE html>
+<html lang="nl-BE">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Robbie's Raketrace – Maaltafels</title>
+<script>
+/* ================= INSTELLINGEN ================= */
+/* Leeg laten = voortgang blijft alleen op dit toestel. Ingevuld = voortgang wordt per leerling
+   bewaard in Supabase en staat op elk toestel klaar (zelfde klassen als Robbie in Robotland). */
+window.MAALTAFEL_CONFIG = {
+  supabaseUrl:     "https://tkpwczonptfvaqexitaf.supabase.co",   // Project URL, bv. "https://abcdefghijkl.supabase.co"
+  supabaseAnonKey: "sb_publishable_-yG-PMEeMZaj-y6cxErc6g_qvqB40tv",   // anon / publishable key (NOOIT de service_role of secret key!)
+  klascode:        ""    // optioneel: vaste klascode voor deze pagina, bv. "K7Q2MX"
+};
+/* ================================================ */
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg1:#0f1a3d; --bg2:#1d2c66; --card:#ffffff; --ink:#1d2350; --muted:#6b7199;
+  --yellow:#ffd23f; --coral:#ff6b6b; --teal:#2ec4b6; --green:#3ccf6e; --orange:#ff9f43;
+  --purple:#8a6cff; --line:#e4e7f5; --r:22px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%}
+body{font-family:'Fredoka',system-ui,sans-serif;color:var(--ink);
+  background:var(--bg2);min-height:100dvh;overflow-x:hidden;user-select:none}
+html{background:var(--bg2)}
+body:before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(ellipse at 20% 0%,#2a3d8f 0%,transparent 55%),linear-gradient(180deg,var(--bg1),var(--bg2))}
+#stars{position:fixed;inset:0;pointer-events:none;z-index:0}
+#stars i{position:absolute;width:2px;height:2px;background:#fff;border-radius:50%;opacity:.7;animation:tw 3s infinite alternate}
+@keyframes tw{to{opacity:.15}}
+button{font-family:inherit;cursor:pointer;border:none}
+.screen{display:none;position:relative;z-index:1;max-width:960px;margin:0 auto;padding:16px 16px 28px;min-height:100dvh}
+.screen.on{display:block}
+h1,h2,h3{margin:0;font-weight:700}
+.card{background:var(--card);border-radius:var(--r);padding:18px;box-shadow:0 6px 0 rgba(0,0,0,.18)}
+.white{color:#fff}
+.btn{border-radius:18px;padding:14px 20px;font-size:20px;font-weight:600;color:var(--ink);background:#eef0fb;box-shadow:0 4px 0 #c9cde6;transition:transform .08s}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #c9cde6}
+.btn.big{font-size:26px;padding:18px 24px;width:100%}
+.btn.yellow{background:var(--yellow);box-shadow:0 5px 0 #d19d00}
+.btn.teal{background:var(--teal);color:#fff;box-shadow:0 5px 0 #1a8f84}
+.btn.coral{background:var(--coral);color:#fff;box-shadow:0 5px 0 #c94545}
+.btn.ghost{background:rgba(255,255,255,.14);color:#fff;box-shadow:none;font-size:17px;padding:10px 14px}
+.btn.small{font-size:16px;padding:8px 12px;border-radius:12px}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.grow{flex:1}
+.muted{color:var(--muted)}
+
+/* Robbie */
+.robbie .rb-light{fill:#ff6b6b;animation:blinklight 1.2s infinite}
+@keyframes blinklight{50%{fill:#ffd23f}}
+.robbie .rb-eyes{transform-origin:60px 52px;animation:blink 4s infinite}
+@keyframes blink{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
+.robbie.bounce{animation:bounce .5s}
+@keyframes bounce{40%{transform:translateY(-12px) rotate(-4deg)}}
+.robbie.shake{animation:shake .45s}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.bubble{position:relative;background:#fff;border-radius:18px;padding:12px 16px;font-size:20px;font-weight:500;box-shadow:0 4px 0 rgba(0,0,0,.15)}
+.bubble:before{content:"";position:absolute;left:-10px;top:50%;margin-top:-10px;border:10px solid transparent;border-right-color:#fff;border-left:0}
+
+/* Players */
+.hero{display:flex;align-items:center;gap:14px;margin:6px 0 20px}
+.hero h1{color:#fff;font-size:34px;line-height:1.05}
+.hero h1 span{color:var(--yellow)}
+.players{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+.pcard{background:#fff;border-radius:var(--r);padding:16px 10px;text-align:center;box-shadow:0 6px 0 rgba(0,0,0,.18);position:relative;font-size:20px;font-weight:600;color:var(--ink)}
+.pcard .av{font-size:52px;display:block;line-height:1.1}
+.pcard .st{font-size:15px;color:var(--muted);font-weight:500}
+.pcard.add{background:rgba(255,255,255,.12);color:#fff;border:3px dashed rgba(255,255,255,.4);box-shadow:none}
+.pcard .del{position:absolute;top:6px;right:6px;width:32px;height:32px;border-radius:50%;background:var(--coral);color:#fff;font-size:18px;display:none}
+.managing .pcard .del{display:block}
+
+/* Menu */
+.topbar{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.topbar .who{color:#fff;font-size:26px;font-weight:700;display:flex;align-items:center;gap:8px}
+.topbar .who span.av{font-size:38px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:720px){.grid2{grid-template-columns:1fr}}
+.today{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.streak{font-size:40px;font-weight:700;line-height:1}
+.streak small{display:block;font-size:15px;color:var(--muted);font-weight:500}
+.goal{display:flex;gap:6px}
+.goal i{width:34px;height:34px;border-radius:50%;background:#eef0fb;display:grid;place-items:center;font-style:normal;font-size:20px}
+.goal i.on{background:var(--yellow)}
+.week{display:flex;gap:6px;margin-top:10px}
+.week div{text-align:center;font-size:13px;color:var(--muted)}
+.week b{display:block;width:30px;height:30px;border-radius:10px;background:#eef0fb;margin-bottom:2px;line-height:30px;font-size:16px}
+.week b.on{background:var(--teal);color:#fff}
+.week b.today{outline:3px solid var(--yellow)}
+.lbl{font-size:15px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px}
+.tables{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.tbtn{height:56px;border-radius:16px;font-size:26px;font-weight:700;background:#eef0fb;color:var(--ink);box-shadow:0 4px 0 #c9cde6}
+.tbtn.on{background:var(--purple);color:#fff;box-shadow:0 4px 0 #5a40c9}
+.tbtn .bolt{font-size:13px;vertical-align:super}
+.seg{display:flex;background:#eef0fb;border-radius:16px;padding:4px;gap:4px}
+.seg button{flex:1;padding:10px 6px;border-radius:12px;font-size:18px;font-weight:600;background:transparent;color:var(--ink)}
+.seg button.on{background:#fff;box-shadow:0 2px 0 #c9cde6}
+.recline{text-align:center;color:#fff;font-size:17px;margin-top:8px}
+.badges{display:flex;flex-wrap:wrap;gap:8px}
+.badge{width:54px;height:54px;border-radius:16px;background:#eef0fb;display:grid;place-items:center;font-size:28px;position:relative}
+.badge.off{filter:grayscale(1);opacity:.3}
+.badge:hover:after,.badge.tip:after{content:attr(data-t);position:absolute;bottom:60px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;font-size:13px;padding:4px 8px;border-radius:8px;white-space:nowrap;z-index:5}
+
+/* Game */
+#s-game{padding:10px 12px;display:none;height:100dvh;max-height:100dvh}
+#s-game.on{display:grid;grid-template-columns:64px minmax(0,1fr);gap:12px}
+@media(max-width:520px){#s-game.on{grid-template-columns:48px minmax(0,1fr);gap:8px}.rocket{font-size:30px;margin-left:-17px}.track .pl{width:24px;height:24px;margin:0 0 -12px -12px}.dots i{width:10px;height:10px}.dots{gap:3px}.grobbie .bubble{font-size:16px}}
+.track{position:relative;background:rgba(255,255,255,.08);border-radius:32px;margin:4px 0}
+.track .pl{position:absolute;left:50%;width:30px;height:30px;margin:0 0 -15px -15px;border-radius:50%;box-shadow:inset -5px -4px 0 rgba(0,0,0,.18)}
+.track .pl.hit{box-shadow:0 0 0 4px var(--yellow),inset -5px -4px 0 rgba(0,0,0,.18)}
+.track .rec{position:absolute;left:4px;right:4px;border-top:3px dashed var(--yellow)}
+.track .rec span{position:absolute;right:-2px;top:-22px;font-size:12px;color:var(--yellow);font-weight:600}
+.rocket{position:absolute;left:50%;bottom:0;font-size:38px;margin-left:-22px;transition:bottom .35s cubic-bezier(.3,1.6,.5,1);transform:rotate(-45deg);filter:drop-shadow(0 4px 6px rgba(255,160,60,.6))}
+.gmain{display:flex;flex-direction:column;gap:10px;min-height:0}
+.ghead{display:flex;align-items:center;gap:10px}
+.timer{flex:1;height:22px;background:rgba(255,255,255,.15);border-radius:12px;overflow:hidden;position:relative}
+.timer div{height:100%;background:linear-gradient(90deg,var(--teal),var(--green));border-radius:12px;width:100%}
+.timer.low div{background:linear-gradient(90deg,var(--coral),var(--orange));animation:pulse .5s infinite alternate}
+@keyframes pulse{to{opacity:.6}}
+.timer span{position:absolute;inset:0;text-align:center;color:#fff;font-weight:700;font-size:15px;line-height:22px}
+.score{color:#fff;font-size:26px;font-weight:700;min-width:84px;text-align:right}
+.combo{color:var(--yellow);font-size:16px;font-weight:600;min-width:70px}
+.grobbie{display:flex;align-items:center;gap:12px}
+.qcard{background:#fff;border-radius:28px;padding:10px;text-align:center;box-shadow:0 6px 0 rgba(0,0,0,.18);position:relative}
+.q{font-size:clamp(36px,10vw,76px);font-weight:700;line-height:1.1;letter-spacing:.02em}
+.ans{display:inline-block;min-width:1.6em;border-bottom:6px solid var(--line);color:var(--purple)}
+.qcard.ok{background:#d9f8e3}.qcard.ok .ans{color:#1a9a48;border-color:var(--green)}
+.qcard.bad{background:#ffe0e0}.qcard.bad .ans{color:var(--coral);border-color:var(--coral)}
+.qcard .fix{font-size:22px;color:var(--ink);height:28px}
+.float{position:absolute;right:20px;top:10px;font-size:30px;font-weight:700;color:#1a9a48;animation:up .8s forwards;pointer-events:none}
+@keyframes up{to{transform:translateY(-40px);opacity:0}}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;flex:1;min-height:0;max-height:420px}
+.pad button{min-width:0;border-radius:20px;font-size:clamp(28px,6vw,40px);font-weight:700;background:#fff;color:var(--ink);box-shadow:0 5px 0 #b9bfe0;min-height:54px}
+.pad button:active{transform:translateY(3px);box-shadow:0 2px 0 #b9bfe0}
+.pad .ok{background:var(--green);color:#fff;box-shadow:0 5px 0 #23964b}
+.pad .bs{background:#eef0fb}
+.dots{flex:1;display:flex;gap:5px;justify-content:center;flex-wrap:wrap;min-width:0}
+.dots i{width:16px;height:16px;border-radius:50%;background:rgba(255,255,255,.2)}
+.dots i.ok{background:var(--green)}.dots i.bad{background:var(--coral)}.dots i.cur{background:var(--yellow)}
+.quit{background:rgba(255,255,255,.14);color:#fff;width:40px;height:40px;border-radius:12px;font-size:20px}
+
+.robbie{overflow:visible}
+.btn[disabled]{opacity:.5;pointer-events:none}
+.fuel{height:20px;background:#eef0fb;border-radius:10px;overflow:hidden;margin:6px 0}
+.fuel div{height:100%;background:linear-gradient(90deg,var(--orange),var(--yellow));border-radius:10px}
+.bosses{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.bbtn{border-radius:14px;padding:6px 0;font-size:16px;font-weight:700;background:#eef0fb;color:#9aa0c3;line-height:1.15;min-height:62px}
+.bbtn b{display:block;font-size:22px}
+.bbtn small{font-size:9px;display:block;height:11px}
+.bbtn.open{background:var(--coral);color:#fff;box-shadow:0 4px 0 #c94545}
+.bbtn.open b{animation:bounce 1s infinite}
+.bbtn.won{background:#fff3c4;color:var(--ink);box-shadow:0 4px 0 #e0c060}
+.track.boss{display:flex;flex-direction:column-reverse;justify-content:space-evenly;align-items:center;font-size:26px}
+.track.boss .zap{opacity:.35}
+.lives{font-size:22px;min-width:84px;text-align:right;white-space:nowrap}
+.diploma{border:6px double #e0b530;background:#fffdf2}
+.dipl-t{font-size:34px;font-weight:700;letter-spacing:.15em;color:#b8860b}
+#s-catch{padding:10px 12px;height:100dvh;max-height:100dvh}
+#s-catch.on{display:flex;flex-direction:column;gap:10px}
+.field{flex:1;position:relative;overflow:hidden;border-radius:24px;background:rgba(255,255,255,.07);touch-action:none}
+.crob{position:absolute;left:0;bottom:24px;width:70px;will-change:transform}
+.crob .flame{position:absolute;left:50%;bottom:-18px;margin-left:-11px;font-size:22px;transform:rotate(180deg);animation:pulse .2s infinite alternate}
+.item{position:absolute;left:0;top:0;font-size:34px;line-height:1;will-change:transform;pointer-events:none}
+.item.big{font-size:46px}
+.pop{position:absolute;font-size:26px;font-weight:700;color:var(--yellow);animation:up .7s forwards;pointer-events:none}
+.pop.neg{color:var(--coral)}
+.shop{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px;margin-bottom:14px}
+.shopi{border-radius:16px;background:#eef0fb;padding:8px 4px;font-size:15px;font-weight:600;color:var(--ink);box-shadow:0 4px 0 #c9cde6;line-height:1.25}
+.shopi .pv{font-size:32px;height:42px;display:grid;place-items:center}
+.shopi .sw{width:32px;height:32px;border-radius:50%;border:4px solid}
+.shopi.sel{background:var(--yellow);box-shadow:0 4px 0 #d19d00}
+.shopi.poor{opacity:.55}
+.nowrap{flex-wrap:nowrap}
+.games{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:720px){.games{grid-template-columns:1fr}}
+.gcard{text-align:center}.ge{font-size:54px;line-height:1.1}
+.holes{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:12px;width:min(100%,520px,calc(100dvh - 190px));aspect-ratio:1}
+.hole{border-radius:50%;background:rgba(0,0,0,.28);border:4px solid rgba(255,255,255,.15);display:grid;place-items:center;font-size:clamp(34px,9vw,60px);padding:0;overflow:hidden;touch-action:none}
+.hole{min-height:0;min-width:0}
+.hole svg{width:52%;height:auto;pointer-events:none}
+.up{width:100%;height:100%;display:grid;place-items:center;animation:pop .18s;pointer-events:none}
+.pads{display:grid;grid-template-columns:1fr 1fr;gap:14px;width:min(100%,460px,calc(100dvh - 200px));aspect-ratio:1}
+.padm{border-radius:28px;opacity:.4;transition:opacity .08s,transform .08s;touch-action:none}
+.padm.lit{opacity:1;transform:scale(1.04);box-shadow:0 0 34px currentColor}
+.bsub{font-size:13px;font-weight:600;color:var(--muted);margin:8px 0 4px}
+.finish{position:absolute;top:2px;left:0;right:0;text-align:center;font-size:22px}
+.gates{position:absolute;left:0;right:0;top:0;display:flex;gap:10px;padding:0 10px;will-change:transform}
+.gate{flex:1;min-width:0;height:84px;border-radius:22px;background:#fff;color:var(--ink);font-size:clamp(30px,7vw,44px);font-weight:700;box-shadow:0 5px 0 #b9bfe0;border:5px solid var(--purple);touch-action:none}
+.gate.ok{background:var(--green);color:#fff;border-color:#23964b}
+.gate.bad{background:var(--coral);color:#fff;border-color:#c94545}
+.grocket{position:absolute;bottom:14px;left:50%;font-size:44px;line-height:1;margin-left:-24px;transition:left .2s;filter:drop-shadow(0 4px 6px rgba(255,160,60,.6))}
+.btn.purple{background:var(--purple);color:#fff;box-shadow:0 5px 0 #5a40c9}
+.btn.orange{background:var(--orange);color:#fff;box-shadow:0 5px 0 #c9742a}
+.pinslots{display:flex;gap:10px;justify-content:center;margin:12px 0}
+.pinslots i{width:58px;height:58px;border-radius:14px;border:3px dashed #c9cde6;display:grid;place-items:center;font-size:34px;font-style:normal}
+.pinslots i.f{border-style:solid;border-color:var(--purple);background:#f3efff}
+.pinpad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.pinpad button{font-size:38px;padding:10px 0;border-radius:16px;background:#eef0fb;box-shadow:0 4px 0 #c9cde6}
+.pinpad button:active{transform:translateY(3px);box-shadow:0 1px 0 #c9cde6}
+.codein{text-transform:uppercase;letter-spacing:.25em;text-align:center}
+/* overlay */
+.overlay{position:fixed;inset:0;background:rgba(10,15,40,.75);display:none;place-items:center;z-index:50;padding:16px}
+.overlay.on{display:grid}
+.count{font-size:140px;font-weight:700;color:var(--yellow);animation:pop .7s}
+@keyframes pop{0%{transform:scale(.3);opacity:0}40%{transform:scale(1.15);opacity:1}100%{transform:scale(1)}}
+.modal{background:#fff;border-radius:26px;padding:22px;max-width:440px;width:100%}
+.modal input{width:100%;font:inherit;font-size:26px;padding:12px 14px;border-radius:14px;border:3px solid var(--line);margin:10px 0 14px;outline:none}
+.modal input:focus{border-color:var(--purple)}
+.avs{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:16px}
+.avs button{font-size:34px;background:#eef0fb;border-radius:14px;padding:6px 0}
+.avs button.on{background:var(--yellow)}
+
+/* Result */
+.res{text-align:center}
+.res .big{font-size:64px;font-weight:700;color:var(--purple);line-height:1}
+.res .planet{font-size:24px;margin:6px 0 12px}
+.stats{display:flex;justify-content:center;gap:24px;margin:10px 0}
+.stats div{font-size:28px;font-weight:700}.stats small{display:block;font-size:14px;color:var(--muted);font-weight:500}
+.newrec{display:inline-block;background:var(--yellow);padding:6px 16px;border-radius:30px;font-weight:700;font-size:22px;animation:pop .6s}
+.hard{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:8px}
+.hard span{background:#fff3e0;border-radius:12px;padding:6px 12px;font-size:22px;font-weight:600}
+.newbadges{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px}
+.newbadges div{background:#f3efff;border-radius:16px;padding:8px 12px;font-size:16px;font-weight:600}
+.newbadges b{font-size:30px;display:block}
+
+/* Speed map */
+.map{display:grid;grid-template-columns:auto repeat(10,1fr) auto;gap:4px;align-items:center}
+.map .h{font-weight:700;text-align:center;font-size:15px;color:var(--muted)}
+.map .rh{font-weight:700;font-size:16px;padding-right:4px;white-space:nowrap}
+.cell{border-radius:8px;aspect-ratio:1;display:grid;place-items:center;font-size:clamp(9px,1.6vw,14px);font-weight:600;background:#eef0fb;color:#9aa0c3}
+.cell.fast{background:var(--green);color:#fff}
+.cell.ok{background:#b6e86a;color:#2b4a00}
+.cell.slow{background:var(--orange);color:#fff}
+.cell.red{background:var(--coral);color:#fff}
+.legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;font-size:15px}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend i{width:18px;height:18px;border-radius:5px;display:inline-block}
+table.ov{width:100%;border-collapse:collapse;font-size:17px}
+table.ov th{text-align:left;color:var(--muted);font-weight:600;font-size:14px;padding:6px}
+table.ov td{padding:8px 6px;border-top:2px solid var(--line)}
+.note{font-size:14px;color:rgba(255,255,255,.7);text-align:center;margin-top:18px}
+.confetti{position:fixed;top:-20px;width:12px;height:16px;z-index:60;pointer-events:none;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
+</style>
+</head>
+<body>
+<div id="stars"></div>
+
+<section id="s-players" class="screen on"></section>
+<section id="s-menu" class="screen"></section>
+<section id="s-game" class="screen"></section>
+<section id="s-result" class="screen"></section>
+<section id="s-map" class="screen"></section>
+<section id="s-overview" class="screen"></section>
+<section id="s-catch" class="screen"></section>
+<section id="s-shop" class="screen"></section>
+<section id="s-arcade" class="screen"></section>
+
+<div id="ov" class="overlay"></div>
+
+<script>
+/* ---------- Opslag (per browser) ---------- */
+const KEY='robbie-maaltafels-v1';
+let canSave=true;
+let store={players:{},order:[],current:null,sound:true};
+try{const raw=localStorage.getItem(KEY); if(raw) store=Object.assign(store,JSON.parse(raw));}catch(e){canSave=false}
+function save(){
+  if(SYNC&&sess){const cp=store.players[sess.id]; if(cp){cp._ts=Date.now();schedulePush()}}
+  try{localStorage.setItem(KEY,JSON.stringify(store));}catch(e){canSave=false}}
+
+/* ---------- Supabase: voortgang over toestellen heen ---------- */
+const CFG=window.MAALTAFEL_CONFIG||{};
+const SB_URL=String(CFG.supabaseUrl||'').trim().replace(/\/+$/,''), SB_KEY=String(CFG.supabaseAnonKey||'').trim();
+const SYNC=!!(SB_URL&&SB_KEY);
+const normCode=c=>String(c||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
+const URLCODE=(()=>{try{return normCode(new URLSearchParams(location.search).get('klas'))}catch(e){return ''}})();
+const FIXCODE=normCode(CFG.klascode)||URLCODE;
+const klasCode=()=>FIXCODE||store.klascode||'';
+let sess=null;        /* aangemelde leerling: {id,pin} (alleen in het geheugen) */
+let teacherTok=null;  /* aangemelde leerkracht */
+let klas=null;        /* {klas:{naam}, leerlingen:[...]} */
+let syncState='ok', pushT=0, pushing=false, pushAgain=false;
+async function rpc(fn,args,token,keepalive){
+  const r=await fetch(SB_URL+'/rest/v1/rpc/'+fn,{method:'POST',keepalive:!!keepalive,
+    headers:{'Content-Type':'application/json',apikey:SB_KEY,Authorization:'Bearer '+(token||SB_KEY)},body:JSON.stringify(args||{})});
+  let j=null; try{j=await r.json()}catch(e){}
+  if(!r.ok){const err=new Error((j&&j.message)||'fout');err.status=r.status;throw err}
+  return j;
+}
+function setSync(st){syncState=st;const el=document.getElementById('sync');if(el){el.textContent=st==='ok'?'☁️':'⚠️';el.title=st==='ok'?'Bewaard':'Nog niet bewaard: geen verbinding'}}
+function schedulePush(){clearTimeout(pushT);pushT=setTimeout(pushNow,2500)}
+async function pushNow(keepalive){
+  clearTimeout(pushT); if(!SYNC||!sess) return;
+  const s0=sess, p=store.players[s0.id]; if(!p) return;
+  if(pushing){pushAgain=true;return}
+  pushing=true;
+  try{const r=await rpc('mt_bewaren',{p_code:klasCode(),p_leerling:s0.id,p_pin:s0.pin,p_gegevens:p},null,keepalive);
+    setSync(r&&r.ok?'ok':'err')}
+  catch(e){setSync('err'); if(sess===s0) pushT=setTimeout(pushNow,15000)}
+  pushing=false;
+  if(pushAgain){pushAgain=false; if(sess===s0) schedulePush()}
+}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&SYNC&&sess)pushNow(true)});
+const mkPlayer=(id,name,avatar)=>({id,name,avatar,days:{},records:{},facts:{},badges:[],tables:[2,5,10],op:'m',dur:60,stars:0});
+
+const AVATARS=['🦊','🐼','🐸','🦁','🐯','🐰','🐨','🐵','🦄','🐙','🐧','🐶','🐱','🦖','🐝','🦉','🐳','🐞'];
+const PLANETS=[
+ {n:'de Maan',at:10,c:'#d9dde8',e:'🌙'},{n:'Mars',at:20,c:'#e8664a',e:'🔴'},
+ {n:'Jupiter',at:32,c:'#e0a86b',e:'🟠'},{n:'Saturnus',at:45,c:'#f2d27a',e:'🪐'},
+ {n:'Neptunus',at:60,c:'#5aa8f0',e:'🔵'},{n:'de sterren',at:80,c:'#ffe45c',e:'🌟'}];
+const TRACK_MAX=90, DAY_GOAL=3, PRACTICE_N=15;
+/* Sterrenvanger: zoveel JUISTE sommen voor 1 ticket, max tickets per dag, speeltijd in seconden */
+const FUEL_MAX=40, TK_DAY=2, TK_STORE=2, CATCH_SEC=45, BOSS_MS=7000;
+const SHOP={
+ color:{t:'Kleur',items:[
+  {id:'teal',n:'blauw',p:0,c:['#9be3e6','#6cc9cf','#2c6e79']},{id:'red',n:'rood',p:30,c:['#ffb3b3','#ff6b6b','#8f2f2f']},
+  {id:'green',n:'groen',p:30,c:['#b5efbc','#63d17a','#23703a']},{id:'purple',n:'paars',p:40,c:['#d6c9ff','#a48cff','#4a348f']},
+  {id:'orange',n:'oranje',p:40,c:['#ffd9b0','#ffab5c','#8f5a1c']},{id:'pink',n:'roze',p:40,c:['#ffd0e7','#ff8fc5','#99386a']},
+  {id:'gold',n:'goud',p:200,c:['#fff0a8','#ffd23f','#8a6a00']}]},
+ hat:{t:'Hoed',items:[{id:'none',n:'geen',p:0,e:''},{id:'cap',n:'pet',p:30,e:'🧢'},{id:'top',n:'hoge hoed',p:50,e:'🎩'},
+  {id:'grad',n:'slimme hoed',p:70,e:'🎓'},{id:'crown',n:'kroon',p:150,e:'👑'}]},
+ acc:{t:'Extra',items:[{id:'none',n:'geen',p:0,e:''},{id:'bow',n:'strikje',p:30,e:'🎀'},{id:'scarf',n:'sjaal',p:40,e:'🧣'},{id:'shades',n:'zonnebril',p:60,e:'🕶️'}]},
+ rocket:{t:'Raket voor de race',items:[{id:'r0',n:'raket',p:0,e:'🚀',rot:-45},{id:'balloon',n:'ballon',p:30,e:'🎈',rot:0},
+  {id:'ufo',n:'ufo',p:60,e:'🛸',rot:0},{id:'uni',n:'eenhoorn',p:90,e:'🦄',rot:0},{id:'dragon',n:'draak',p:120,e:'🐉',rot:0}]}};
+const DEFLOOK={color:'teal',hat:'none',acc:'none',rocket:'r0'};
+const shopItem=(cat,id)=>SHOP[cat].items.find(i=>i.id===id)||SHOP[cat].items[0];
+function ensure(p){ if(!p) return p;
+  for(const k of ['fuel','tickets','spent','catchBest']) if(typeof p[k]!=='number') p[k]=0;
+  p.tkDay=p.tkDay||{d:'',n:0}; p.owned=p.owned||[]; p.diplomas=p.diplomas||{}; p.bossOpen=p.bossOpen||{};
+  p.look=Object.assign({},DEFLOOK,p.look);
+  p.best=p.best||{}; if(p.catchBest&&!p.best.catch) p.best.catch=p.catchBest; return p }
+const coins=p=>(p.stars||0)-(p.spent||0);
+function addFuel(p,n){
+  const today=dk(new Date()); if(p.tkDay.d!==today) p.tkDay={d:today,n:0};
+  p.fuel+=n; let got=0;
+  while(p.fuel>=FUEL_MAX&&p.tkDay.n<TK_DAY&&p.tickets<TK_STORE){p.fuel-=FUEL_MAX;p.tickets++;p.tkDay.n++;got++}
+  if(p.fuel>FUEL_MAX) p.fuel=FUEL_MAX;
+  return got }
+function bossIsOpen(p,op,t){
+  if(p.bossOpen[op+t]) return true;
+  for(let n=1;n<=10;n++){const l=factLevel(p.facts[fkey(op,t,n)]);if(l!=='fast'&&l!=='ok')return false}
+  p.bossOpen[op+t]=1; return true }
+const BADGES=[
+ {id:'first',e:'🚀',t:'Eerste raketrace'},
+ {id:'p0',e:'🌙',t:'De Maan bereikt'},{id:'p1',e:'🔴',t:'Mars bereikt'},{id:'p2',e:'🟠',t:'Jupiter bereikt'},
+ {id:'p3',e:'🪐',t:'Saturnus bereikt'},{id:'p4',e:'🔵',t:'Neptunus bereikt'},{id:'p5',e:'🌟',t:'Tot de sterren!'},
+ {id:'goal',e:'⭐',t:'Dagdoel gehaald'},{id:'rec',e:'🏆',t:'Eigen record gebroken'},
+ {id:'s3',e:'🔥',t:'3 dagen op rij'},{id:'s5',e:'💪',t:'5 dagen op rij'},{id:'s10',e:'👑',t:'10 dagen op rij'},
+ {id:'bolt',e:'⚡',t:'Een bliksemtafel'},{id:'bolt5',e:'🌩️',t:'5 bliksemtafels'},
+ {id:'catch',e:'🎮',t:'Beloningsspel gespeeld'},{id:'gold',e:'🥇',t:'Goud in een spel'},
+ {id:'duel',e:'🏁',t:'Wedstrijd gewonnen'},{id:'duel5',e:'🛸',t:'Wedstrijd niveau 5'},{id:'gate',e:'🌀',t:'20 ⭐ in de Poortenvlucht'},{id:'boss',e:'👾',t:'Bugbot verslagen'},{id:'boss5',e:'🎓',t:"5 diploma's"}];
+
+/* ---------- Hulpjes ---------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const dk=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const rnd=a=>a[Math.floor(Math.random()*a.length)];
+const P=()=>ensure(store.players[store.current]);
+function show(id){for(const g of ['s-game','s-catch']) if(g!==id) $('#'+g).innerHTML='';
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$('#'+id).classList.add('on');window.scrollTo(0,0)}
+
+function robbie(mood='happy',size=110,cls='',look){
+  if(look===undefined){const cp=store.players[store.current];look=cp&&cp.look}
+  look=look||DEFLOOK;
+  const [ch,cb,cs]=shopItem('color',look.color).c, hat=shopItem('hat',look.hat).e, acc=look.acc;
+  const mouths={happy:'<path d="M44 68 Q60 82 76 68" stroke="#1d2350" stroke-width="5" fill="none" stroke-linecap="round"/>',
+    wow:'<ellipse cx="60" cy="72" rx="8" ry="9" fill="#1d2350"/>',
+    think:'<path d="M48 72 Q60 66 72 72" stroke="#1d2350" stroke-width="5" fill="none" stroke-linecap="round"/>'};
+  const pup=mood==='think'?'cx="49" cy="47"':'cx="47" cy="51"', pup2=mood==='think'?'cx="79" cy="47"':'cx="77" cy="51"';
+  return `<svg class="robbie ${cls}" width="${size}" height="${size*1.25}" viewBox="0 0 120 150" aria-label="Robbie Robot">
+  ${hat?'':`<line x1="60" y1="10" x2="60" y2="26" stroke="#8aa0b8" stroke-width="4"/>
+  <circle class="rb-light" cx="60" cy="9" r="7"/>`}
+  <rect x="7" y="44" width="14" height="26" rx="6" fill="#ffb84d" stroke="${cs}" stroke-width="3"/>
+  <rect x="99" y="44" width="14" height="26" rx="6" fill="#ffb84d" stroke="${cs}" stroke-width="3"/>
+  <rect x="18" y="24" width="84" height="68" rx="22" fill="${ch}" stroke="${cs}" stroke-width="4"/>
+  <g class="rb-eyes"><circle cx="45" cy="52" r="11" fill="#fff" stroke="${cs}" stroke-width="3"/><circle cx="75" cy="52" r="11" fill="#fff" stroke="${cs}" stroke-width="3"/>
+  <circle ${pup} r="5" fill="#1d2350"/><circle ${pup2} r="5" fill="#1d2350"/></g>
+  <circle cx="31" cy="70" r="6" fill="#ff8fa3" opacity=".6"/><circle cx="89" cy="70" r="6" fill="#ff8fa3" opacity=".6"/>
+  ${mouths[mood]||mouths.happy}
+  <path d="M30 108 Q12 100 10 84" stroke="${cs}" stroke-width="7" fill="none" stroke-linecap="round"/>
+  <path d="M90 108 Q108 100 112 84" stroke="${cs}" stroke-width="7" fill="none" stroke-linecap="round"/>
+  <rect x="30" y="96" width="60" height="48" rx="14" fill="${cb}" stroke="${cs}" stroke-width="4"/>
+  <circle cx="48" cy="114" r="6" fill="#ff6b6b"/><circle cx="64" cy="114" r="6" fill="#ffd23f"/><rect x="44" y="126" width="32" height="8" rx="4" fill="${cs}"/>
+  ${hat?`<text x="60" y="30" font-size="48" text-anchor="middle">${hat}</text>`:''}
+  ${acc==='shades'?`<text x="60" y="68" font-size="58" text-anchor="middle">🕶️</text>`:''}
+  ${acc==='bow'?`<text x="60" y="106" font-size="26" text-anchor="middle">🎀</text>`:''}
+  ${acc==='scarf'?`<text x="60" y="112" font-size="36" text-anchor="middle">🧣</text>`:''}
+  </svg>`;
+}
+function bugbot(mood='grin',size=58,cls=''){
+  const m=mood==='ouch'?'<ellipse cx="60" cy="74" rx="9" ry="7" fill="#1d2350"/>'
+    :'<path d="M42 68 L50 77 L58 68 L66 77 L78 68" stroke="#1d2350" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
+  return `<svg class="robbie ${cls}" width="${size}" height="${size*1.25}" viewBox="0 0 120 150" aria-label="Bugbot">
+  <line x1="44" y1="8" x2="50" y2="26" stroke="#3b2a80" stroke-width="4"/><line x1="76" y1="8" x2="70" y2="26" stroke="#3b2a80" stroke-width="4"/>
+  <circle cx="43" cy="7" r="5" fill="#ff6b6b"/><circle cx="77" cy="7" r="5" fill="#ff6b6b"/>
+  <rect x="18" y="24" width="84" height="68" rx="14" fill="#b9a3ff" stroke="#3b2a80" stroke-width="4"/>
+  <circle cx="45" cy="55" r="10" fill="#fff" stroke="#3b2a80" stroke-width="3"/><circle cx="75" cy="55" r="10" fill="#fff" stroke="#3b2a80" stroke-width="3"/>
+  <circle cx="47" cy="56" r="5" fill="#c0392b"/><circle cx="73" cy="56" r="5" fill="#c0392b"/>
+  <path d="M30 38 L54 46" stroke="#3b2a80" stroke-width="5" stroke-linecap="round"/><path d="M90 38 L66 46" stroke="#3b2a80" stroke-width="5" stroke-linecap="round"/>
+  ${m}
+  <rect x="30" y="96" width="60" height="48" rx="10" fill="#8a6cff" stroke="#3b2a80" stroke-width="4"/>
+  <text x="60" y="130" font-size="24" text-anchor="middle">🐛</text>
+  </svg>`;
+}
+const padHTML=()=>`<div class="pad" id="pad">
+  ${[7,8,9,4,5,6,1,2,3].map(n=>`<button data-k="${n}">${n}</button>`).join('')}
+  <button class="bs" data-k="bs" aria-label="Wissen">⌫</button><button data-k="0">0</button><button class="ok" data-k="ok">OK</button></div>`;
+function bindPad(){$('#pad').addEventListener('pointerdown',e=>{const b=e.target.closest('[data-k]');if(!b)return;e.preventDefault();press(b.dataset.k)})}
+
+/* ---------- Geluid ---------- */
+let actx=null;
+function beep(f,d=.12,type='sine',v=.14,delay=0){
+  if(!store.sound) return;
+  try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+    const t=actx.currentTime+delay,o=actx.createOscillator(),g=actx.createGain();
+    o.type=type;o.frequency.setValueAtTime(f,t);g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.001,t+d);
+    o.connect(g);g.connect(actx.destination);o.start(t);o.stop(t+d+.02);}catch(e){}
+}
+const sOk=fast=>{beep(660,.09);beep(fast?1046:880,.14,'sine',.14,.08)};
+const sBad=()=>beep(196,.3,'triangle',.12);
+const sTurbo=()=>[523,659,784,1046].forEach((f,i)=>beep(f,.12,'square',.06,i*.07));
+const sFan=()=>[523,659,784,1046,784,1046].forEach((f,i)=>beep(f,.18,'triangle',.12,i*.12));
+
+/* ---------- Sommen & statistiek ---------- */
+const fkey=(op,t,n)=>op+t+'x'+n;
+function factLevel(f){
+  if(!f||!f.n) return 'new';
+  if(f.last===0) return 'red';
+  const ts=(f.t||[]).slice(-3); if(!ts.length) return 'red';
+  const avg=ts.reduce((a,b)=>a+b,0)/ts.length;
+  return avg<3000?'fast':avg<6000?'ok':'slow';
+}
+const WEIGHT={new:3,red:7,slow:4,ok:2,fast:1};
+function isBoltTable(p,op,t){for(let n=1;n<=10;n++){if(factLevel(p.facts[fkey(op,t,n)])!=='fast')return false}return true}
+function boltCount(p){let c=0;for(const op of['m','d'])for(let t=1;t<=10;t++)if(isBoltTable(p,op,t))c++;return c}
+function streak(p){const d=new Date();if(!p.days[dk(d)])d.setDate(d.getDate()-1);let s=0;while(p.days[dk(d)]){s++;d.setDate(d.getDate()-1)}return s}
+function weekRounds(p){const d=new Date();let s=0;for(let i=0;i<7;i++){s+=p.days[dk(d)]||0;d.setDate(d.getDate()-1)}return s}
+
+/* ---------- Sterrenhemel ---------- */
+(function(){let h='';for(let i=0;i<70;i++)h+=`<i style="left:${Math.random()*100}%;top:${Math.random()*100}%;animation-delay:${Math.random()*3}s;${Math.random()<.2?'width:3px;height:3px':''}"></i>`;$('#stars').innerHTML=h})();
+
+/* ---------- Scherm: spelers ---------- */
+let managing=false;
+function renderPlayers(){
+  if(SYNC) return renderKlas();
+  const ps=store.order.map(id=>store.players[id]).filter(Boolean);
+  $('#s-players').innerHTML=`
+  <div class="hero">${robbie('happy',100,'bounce',null)}
+    <div><h1>Robbie's<br><span>Raketrace</span></h1>
+    <div class="bubble" style="margin-top:10px;font-size:18px">Hoi! Wie gaat er vandaag oefenen?</div></div></div>
+  <div class="players ${managing?'managing':''}">
+    ${ps.map(p=>`<button class="pcard" data-a="pick" data-id="${p.id}">
+      <span class="del" data-a="del" data-id="${p.id}">✕</span>
+      <span class="av">${p.avatar}</span>${esc(p.name)}
+      <div class="st">${streak(p)?'🔥 '+streak(p)+' dag'+(streak(p)>1?'en':''):'&nbsp;'}</div></button>`).join('')}
+    <button class="pcard add" data-a="newPlayer"><span class="av">＋</span>Nieuwe speler</button>
+  </div>
+  <div class="row" style="margin-top:18px;justify-content:center">
+    ${ps.length?`<button class="btn ghost" data-a="manage">${managing?'✔ Klaar':'✏️ Spelers beheren'}</button>
+    <button class="btn ghost" data-a="overview">👩‍🏫 Overzicht voor de juf</button>`:''}
+  </div>
+  <p class="note">${canSave?'De voortgang wordt bewaard op dit toestel, in deze browser.':'⚠️ Deze browser bewaart niets: na het sluiten begint alles opnieuw.'}</p>`;
+  show('s-players');
+}
+/* ---------- Klas kiezen en aanmelden (alleen met Supabase) ---------- */
+const heroHTML=t=>`<div class="hero">${robbie('happy',100,'bounce',null)}
+    <div><h1>Robbie's<br><span>Raketrace</span></h1>
+    <div class="bubble" style="margin-top:10px;font-size:18px">${t}</div></div></div>`;
+function renderCodeAsk(msg){
+  $('#s-players').innerHTML=heroHTML(msg||'Hoi! Tik de klascode in die je van de juf kreeg.')+`
+   <div class="card" style="max-width:420px;margin:0 auto;text-align:center">
+     <div class="lbl">Klascode</div>
+     <input id="kc" class="codein" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false"
+       style="width:100%;font:inherit;font-size:30px;font-weight:700;padding:12px;border-radius:14px;border:3px solid var(--line);margin-bottom:14px;outline:none">
+     <button class="btn big teal" data-a="kcode">Verder</button>
+   </div>`;
+  show('s-players');
+  const i=$('#kc'); i.onkeydown=e=>{if(e.key==='Enter')A.kcode()};
+}
+async function renderKlas(){
+  const code=klasCode(); if(!code) return renderCodeAsk();
+  $('#s-players').innerHTML=heroHTML('Even je klas zoeken…'); show('s-players');
+  let d;
+  try{d=await rpc('mt_klas',{p_code:code})}
+  catch(e){
+    $('#s-players').innerHTML=heroHTML(e.status===404?'Juf, de databank is nog niet klaar voor de maaltafels. Voer eerst supabase-maaltafels.sql uit.':'Ik krijg geen verbinding met het internet. Probeer het zo nog eens.')+
+      `<div class="row" style="justify-content:center"><button class="btn big yellow" style="max-width:320px" data-a="players">🔄 Opnieuw proberen</button></div>`;
+    return;
+  }
+  if(!d){ if(!FIXCODE){store.klascode='';save()} return renderCodeAsk('Die klascode ken ik niet. Probeer het nog eens.') }
+  klas=d;
+  const ls=d.leerlingen||[];
+  $('#s-players').innerHTML=heroHTML(ls.length?`Klas ${esc(d.klas.naam)}: wie gaat er oefenen?`:'In deze klas staan nog geen leerlingen.')+`
+   <div class="players">${ls.map(l=>`<button class="pcard" data-a="kpick" data-id="${l.id}">
+      <span class="av">${esc(l.symbool)}</span>${esc(l.naam)}
+      <div class="st">${l.heeft_code?'&nbsp;':'✨ nieuw'}</div></button>`).join('')}</div>
+   ${ls.length?'':'<p class="note">Juf: voeg leerlingen toe in Robbie in Robotland (slotje → Klassen). Dezelfde klaslijst geldt voor alle Robbie-apps.</p>'}
+   <div class="row" style="margin-top:18px;justify-content:center">
+     ${FIXCODE?'':'<button class="btn ghost" data-a="kother">🔁 Andere klas</button>'}
+     <button class="btn ghost" data-a="kteacher">👩‍🏫 Overzicht voor de juf</button>
+   </div>
+   <p class="note">☁️ Je voortgang wordt bewaard en staat op elk toestel klaar.</p>`;
+}
+const PICS=['🐶','🐱','🐸','🦋','🍎','⭐','🚗','⚽','🌈'];
+function pinModal(title,sub,cb){
+  let pin='', busy=false;
+  $('#ov').innerHTML=`<div class="modal" style="text-align:center"><h2>${title}</h2>
+    <div class="muted" id="pinsub" style="min-height:26px;font-size:18px">${sub||''}</div>
+    <div class="pinslots" id="pinslots"></div>
+    <div class="pinpad">${PICS.map((e,i)=>`<button data-pin="${i}" aria-label="prentje ${i+1}">${e}</button>`).join('')}</div>
+    <div class="row" style="margin-top:14px"><button class="btn grow" data-a="closeOv">Terug</button><button class="btn grow" id="pinbs">⌫ Wissen</button></div></div>`;
+  $('#ov').classList.add('on');
+  const draw=()=>{$('#pinslots').innerHTML=[0,1,2].map(i=>`<i class="${pin[i]!==undefined?'f':''}">${pin[i]!==undefined?PICS[+pin[i]]:''}</i>`).join('')};
+  draw();
+  $('#pinbs').onclick=()=>{if(busy)return;pin=pin.slice(0,-1);draw()};
+  $('#ov').querySelectorAll('[data-pin]').forEach(b=>b.onclick=()=>{
+    if(busy||pin.length>=3) return; pin+=b.dataset.pin; draw();
+    if(pin.length===3){busy=true;setTimeout(()=>cb(pin),250)}});
+}
+function klasPick(id){
+  const l=klas&&klas.leerlingen.find(x=>x.id===id); if(!l) return;
+  if(l.heeft_code) askPin(l); else choosePin(l);
+}
+function askPin(l,msg){
+  pinModal(`${esc(l.symbool)} ${esc(l.naam)}`,msg||'Tik je geheime code van 3 prentjes.',async pin=>{
+    $('#pinsub').textContent='Even geduld…';
+    let r; try{r=await rpc('mt_laden',{p_code:klasCode(),p_leerling:l.id,p_pin:pin})}catch(e){return askPin(l,'Geen verbinding. Probeer het nog eens.')}
+    if(r&&r.ok) return adopt(l,r.gegevens,pin);
+    if(r&&r.fout==='geen_code'){l.heeft_code=false;return choosePin(l)}
+    askPin(l,r&&r.fout==='geblokkeerd'?'Te veel foute pogingen. Wacht 2 minuutjes.':'Dat klopt niet. Probeer opnieuw of vraag het aan de juf.');
+  });
+}
+function choosePin(l,msg){
+  pinModal(`Hoi ${esc(l.naam)}!`,msg||'Kies je geheime code: tik 3 prentjes.',pin1=>{
+    pinModal('Nog één keer','Tik dezelfde 3 prentjes opnieuw.',async pin2=>{
+      if(pin1!==pin2) return choosePin(l,'Dat was niet dezelfde code. Kies opnieuw 3 prentjes.');
+      $('#pinsub').textContent='Even geduld…';
+      let r; try{r=await rpc('mt_code_kiezen',{p_code:klasCode(),p_leerling:l.id,p_pin:pin1})}catch(e){return choosePin(l,'Geen verbinding. Probeer het nog eens.')}
+      if(r&&r.ok) return adopt(l,r.gegevens,pin1);
+      if(r&&r.fout==='code_bestaat'){l.heeft_code=true;return askPin(l,'Je hebt al een code. Tik die in.')}
+      choosePin(l,'Dat lukte niet. Probeer het nog eens.');
+    });
+  });
+}
+function adopt(l,data,pin){
+  $('#ov').classList.remove('on');
+  const local=store.players[l.id], remote=data&&data.days?data:null;
+  /* het toestel wint alleen als het nieuwere, nog niet doorgestuurde voortgang heeft */
+  let p=local&&(local._ts||0)>((remote&&remote._ts)||0)?local:remote;
+  if(!p) p=mkPlayer(l.id,l.naam,l.symbool);
+  p.id=l.id; p.name=l.naam; p.avatar=l.symbool;
+  store.players[l.id]=p; if(!store.order.includes(l.id)) store.order.push(l.id);
+  store.current=l.id; sess={id:l.id,pin}; syncState='ok';
+  save(); renderMenu();
+}
+function teacherModal(msg){
+  $('#ov').innerHTML=`<div class="modal"><h2>Aanmelden als leerkracht</h2>
+    <div class="muted" id="tmsg" style="min-height:24px;margin-top:6px">${msg||'Hetzelfde account als in Robbie in Robotland.'}</div>
+    <input id="tem" type="email" autocomplete="username" placeholder="e-mailadres" style="font-size:20px">
+    <input id="tpw" type="password" autocomplete="current-password" placeholder="wachtwoord" style="font-size:20px;margin-top:0">
+    <div class="row"><button class="btn grow" data-a="closeOv">Terug</button><button class="btn teal grow" id="tgo">Aanmelden</button></div></div>`;
+  $('#ov').classList.add('on'); $('#tem').focus();
+  const go=async()=>{
+    const email=$('#tem').value.trim(), password=$('#tpw').value; if(!email||!password) return;
+    $('#tmsg').textContent='Even geduld…';
+    try{
+      const r=await fetch(SB_URL+'/auth/v1/token?grant_type=password',{method:'POST',headers:{'Content-Type':'application/json',apikey:SB_KEY},body:JSON.stringify({email,password})});
+      const j=await r.json(); if(!r.ok||!j.access_token) throw new Error('login');
+      teacherTok=j.access_token;
+    }catch(e){$('#tmsg').textContent='Aanmelden mislukt. Controleer je e-mailadres en wachtwoord.';return}
+    $('#ov').classList.remove('on'); loadOverview();
+  };
+  $('#tgo').onclick=go; $('#tpw').onkeydown=e=>{if(e.key==='Enter')go()};
+}
+async function loadOverview(){
+  if(!teacherTok) return teacherModal();
+  let rows;
+  try{rows=await rpc('mt_overzicht',{p_code:klasCode()},teacherTok)}
+  catch(e){teacherTok=null;return teacherModal(e.status===403||e.status===401?'Dit account staat niet in de lijst leerkrachten.':'Dat lukte niet. Probeer het nog eens.')}
+  renderOverview((rows||[]).map(r=>{const p=r.gegevens&&r.gegevens.days?r.gegevens:mkPlayer(r.id,r.naam,r.symbool);
+    p.id=r.id;p.name=r.naam;p.avatar=r.symbool;p._code=!!r.heeft_code;return ensure(p)}));
+}
+
+function newPlayerModal(){
+  let av=rnd(AVATARS);
+  $('#ov').innerHTML=`<div class="modal"><h2>Hoe heet je?</h2>
+   <input id="nm" maxlength="16" placeholder="Je naam" autocomplete="off">
+   <div class="lbl">Kies je dier</div>
+   <div class="avs">${AVATARS.map(a=>`<button data-av="${a}" class="${a===av?'on':''}">${a}</button>`).join('')}</div>
+   <div class="row"><button class="btn grow" data-a="closeOv">Terug</button><button class="btn teal grow" id="mkp">Klaar!</button></div></div>`;
+  $('#ov').classList.add('on');
+  $('#nm').focus();
+  $('#ov').querySelectorAll('[data-av]').forEach(b=>b.onclick=()=>{av=b.dataset.av;$('#ov').querySelectorAll('[data-av]').forEach(x=>x.classList.toggle('on',x===b))});
+  const go=()=>{const name=$('#nm').value.trim();if(!name){$('#nm').style.borderColor='var(--coral)';$('#nm').focus();return}
+    const id='p'+Date.now().toString(36);
+    store.players[id]=mkPlayer(id,name,av);
+    store.order.push(id);store.current=id;save();$('#ov').classList.remove('on');renderMenu()};
+  $('#mkp').onclick=go;$('#nm').onkeydown=e=>{if(e.key==='Enter')go()};
+}
+function confirmModal(text,yes,label='Ja, wissen',cls='coral'){
+  $('#ov').innerHTML=`<div class="modal" style="text-align:center"><h2 style="margin-bottom:16px">${text}</h2>
+  <div class="row"><button class="btn grow" data-a="closeOv">Nee</button><button class="btn ${cls} grow" id="yes">${label}</button></div></div>`;
+  $('#ov').classList.add('on');$('#yes').onclick=()=>{$('#ov').classList.remove('on');yes()};
+}
+
+/* ---------- Scherm: menu ---------- */
+const recKey=p=>p.op+'|'+p.dur+'|'+[...p.tables].sort((a,b)=>a-b).join(',');
+function renderMenu(){
+  const p=P(); if(!p) return renderPlayers();
+  addFuel(p,0);
+  const bop=p.op==='d'?'d':'m';
+  const fuelMsg=p.tickets>=TK_STORE?'Je hebt al '+p.tickets+' tickets. Speel er eerst één!'
+    :p.tkDay.n>=TK_DAY?'Vandaag verdiende je al '+TK_DAY+' tickets. Morgen kan je weer sparen!'
+    :'Nog <b>'+(FUEL_MAX-p.fuel)+'</b> juiste sommen voor een speelticket';
+  const bossRow=o=>Array.from({length:10},(_,i)=>i+1).map(t=>{
+    const st=p.diplomas[o+t]?'won':bossIsOpen(p,o,t)?'open':'lock';
+    return `<button class="bbtn ${st}" data-a="boss" data-o="${o}" data-t="${t}"><b>${st==='won'?'🎓':st==='open'?'👾':'🔒'}</b>${o==='d'?':':'×'} ${t}<small>${'⭐'.repeat(p.diplomas[o+t]||0)}</small></button>`}).join('');
+  save();
+  const today=dk(new Date()), done=p.days[today]||0, s=streak(p), rec=p.records[recKey(p)]||0;
+  const wd=['zo','ma','di','wo','do','vr','za'];
+  let week='';for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const k=dk(d);
+    week+=`<div><b class="${p.days[k]?'on':''} ${i===0?'today':''}">${p.days[k]?'✓':''}</b>${wd[d.getDay()]}</div>`}
+  $('#s-menu').innerHTML=`
+  <div class="topbar"><div class="who"><span class="av">${p.avatar}</span>${esc(p.name)}</div>${SYNC?`<span id="sync" style="font-size:20px">${syncState==='ok'?'☁️':'⚠️'}</span>`:''}<div class="grow"></div>
+    <button class="btn ghost" data-a="shop">⭐ ${coins(p)}</button>
+    <button class="btn ghost" data-a="sound">${store.sound?'🔊':'🔇'}</button>
+    <button class="btn ghost" data-a="players">👥 Wissel</button></div>
+  <div class="grid2">
+   <div class="card">
+     <div class="lbl">Vandaag</div>
+     <div class="today">
+       <div class="streak">🔥 ${s}<small>${s===1?'dag':'dagen'} op rij</small></div>
+       <div><div class="goal">${Array.from({length:DAY_GOAL},(_,i)=>`<i class="${i<done?'on':''}">${i<done?'⭐':''}</i>`).join('')}</div>
+       <div class="muted" style="font-size:15px;margin-top:4px">${done>=DAY_GOAL?'Dagdoel gehaald! 🎉':`Nog ${DAY_GOAL-done} ronde${DAY_GOAL-done>1?'s':''} voor je dagster`}</div></div>
+     </div>
+     <div class="week">${week}</div>
+   </div>
+   <div class="card">
+     <div class="lbl">Kies je tafels</div>
+     <div class="tables">${Array.from({length:10},(_,i)=>i+1).map(t=>{
+        const bolt=(p.op!=='d'&&isBoltTable(p,'m',t))||(p.op==='d'&&isBoltTable(p,'d',t));
+        return `<button class="tbtn ${p.tables.includes(t)?'on':''}" data-a="tbl" data-t="${t}">${t}${bolt?'<span class="bolt">⚡</span>':''}</button>`}).join('')}</div>
+     <div class="row" style="margin-top:10px;gap:6px">
+       <button class="btn small" data-a="preset" data-v="2,5,10">2 · 5 · 10</button>
+       <button class="btn small" data-a="preset" data-v="3,4">3 · 4</button>
+       <button class="btn small" data-a="preset" data-v="1,2,3,4,5,6,7,8,9,10">alle</button></div>
+   </div>
+  </div>
+  <div class="card" style="margin-top:14px">
+    <div class="grid2" style="gap:12px">
+      <div><div class="lbl">Wat oefen je?</div>
+        <div class="seg">${[['m','× maal'],['d',': delen'],['x','× en :']].map(([v,l])=>`<button class="${p.op===v?'on':''}" data-a="op" data-v="${v}">${l}</button>`).join('')}</div></div>
+      <div><div class="lbl">Hoe lang race je?</div>
+        <div class="seg">${[[60,'1 minuut'],[120,'2 minuten']].map(([v,l])=>`<button class="${p.dur===v?'on':''}" data-a="dur" data-v="${v}">${l}</button>`).join('')}</div></div>
+    </div>
+  </div>
+  <div class="grid2" style="margin-top:16px">
+    <div><button class="btn big yellow" data-a="race">🚀 Raketrace!</button>
+      <div class="recline">${rec?`Jouw record met deze tafels: <b>${rec} ⭐</b>`:'Nog geen record met deze tafels. Zet er een neer!'}</div></div>
+    <div><button class="btn big teal" data-a="practice">🐢 Rustig oefenen</button>
+      <div class="recline">${PRACTICE_N} sommen, zonder klok</div></div>
+  </div>
+  <div class="grid2" style="margin-top:14px">
+    <div><button class="btn big purple" data-a="duel">🏁 Wedstrijd tegen Bugbot</button>
+      <div class="recline">Niveau ${p.duelLv||1}: wie heeft eerst ${DUEL_GOAL} sommen juist?</div></div>
+    <div><button class="btn big orange" data-a="gates">🌀 Poortenvlucht</button>
+      <div class="recline">${p.records['gate|'+recKey(p)]?`Jouw record met deze tafels: <b>${p.records['gate|'+recKey(p)]} ⭐</b>`:'Vlieg door de poort met het juiste antwoord'}</div></div>
+  </div>
+  <div class="grid2" style="margin-top:16px">
+    <div class="card">
+      <div class="lbl">🎮 Robbie's speelhoek</div>
+      <div class="row nowrap"><div>${robbie('happy',52)}</div>
+        <div class="grow"><div style="font-size:16px;font-weight:600">⛽ Brandstof voor de jetpack: ${p.fuel}/${FUEL_MAX}</div>
+        <div class="fuel"><div style="width:${p.fuel/FUEL_MAX*100}%"></div></div>
+        <div class="muted" style="font-size:15px">${fuelMsg}</div></div></div>
+      <button class="btn big ${p.tickets?'coral':''}" style="margin-top:12px;font-size:22px" data-a="catch" ${p.tickets?'':'disabled'}>${p.tickets?'🎟️'.repeat(p.tickets)+' Kies een spel!':'🔒 Eerst oefenen voor een ticket'}</button>
+    </div>
+    <div class="card">
+      <div class="lbl">👾 Eindbaas Bugbot</div>
+      <div class="row nowrap" style="margin-bottom:10px"><div>${bugbot('grin',52)}</div>
+        <div class="grow muted" id="bossmsg" style="font-size:15px">Maak alle sommen van een tafel groen op je snelheidskaart. Dan kan je Bugbot uitdagen voor een diploma, voor maal én voor delen!</div></div>
+      <div class="bsub">Maaltafels</div><div class="bosses">${bossRow('m')}</div>
+      <div class="bsub">Deeltafels</div><div class="bosses">${bossRow('d')}</div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <div class="row" style="margin-bottom:10px"><div class="lbl grow" style="margin:0">Mijn verzameling</div>
+      <button class="btn small" data-a="shop">🔧 Robbie's werkplaats</button>
+      <button class="btn small" data-a="map">⚡ Mijn snelheidskaart</button></div>
+    <div class="badges">${BADGES.map(b=>`<div class="badge ${p.badges.includes(b.id)?'':'off'}" data-t="${b.t}" data-a="tip">${b.e}</div>`).join('')}</div>
+  </div>`;
+  show('s-menu');
+}
+
+/* ---------- Spel ---------- */
+let G=null;
+function buildPool(p){
+  const ops=p.op==='x'?['m','d']:[p.op], pool=[];
+  for(const op of ops)for(const t of p.tables)for(let n=1;n<=10;n++)pool.push({op,t,n,k:fkey(op,t,n)});
+  return pool;
+}
+function nextFact(){
+  const due=G.retry.findIndex(r=>r.at<=G.q);
+  if(due>-1) return G.retry.splice(due,1)[0].f;
+  const p=P(), recent=G.recent;
+  let cand=G.pool.filter(f=>!recent.includes(f.k)); if(!cand.length) cand=G.pool;
+  const ws=cand.map(f=>WEIGHT[factLevel(p.facts[f.k])]);
+  let r=Math.random()*ws.reduce((a,b)=>a+b,0);
+  for(let i=0;i<cand.length;i++){r-=ws[i];if(r<=0)return cand[i]}
+  return cand[cand.length-1];
+}
+function startGame(mode){
+  const p=P(); if(!p.tables.length){return}
+  const rk=shopItem('rocket',p.look.rocket);
+  G={mode,pool:buildPool(p),score:0,combo:0,q:0,log:[],retry:[],recent:[],input:'',lock:true,
+     rec:mode==='race'?(p.records[recKey(p)]||0):0,dur:p.dur*1000,end:0,raf:0,cur:null,hit:-1};
+  const s=$('#s-game');
+  s.innerHTML=`
+   <div class="track" id="track">
+     ${PLANETS.map((pl,i)=>`<div class="pl" id="pl${i}" style="bottom:${pl.at/TRACK_MAX*100}%;background:${pl.c}" title="${pl.n}"></div>`).join('')}
+     ${G.rec?`<div class="rec" style="bottom:${Math.min(G.rec/TRACK_MAX,1)*100}%"><span>🏆</span></div>`:''}
+     <div class="rocket" id="rocket" style="transform:rotate(${rk.rot}deg)">${rk.e}</div>
+   </div>
+   <div class="gmain">
+     <div class="ghead">
+       <button class="quit" data-a="quit" aria-label="Stoppen">✕</button>
+       ${mode==='race'?`<div class="timer" id="timer"><div id="tbar"></div><span id="tsec"></span></div>`
+         :`<div class="dots" id="dots">${Array.from({length:PRACTICE_N},()=>'<i></i>').join('')}</div>`}
+       <div class="combo" id="combo"></div>
+       <div class="score" id="score">0 ⭐</div>
+     </div>
+     <div class="grobbie"><div id="rb">${robbie('happy',58)}</div><div class="bubble grow" id="say">Klaar voor de start?</div></div>
+     <div class="qcard" id="qc"><div class="q" id="q">&nbsp;</div><div class="fix" id="fix"></div></div>
+     ${padHTML()}
+   </div>`;
+  show('s-game');
+  bindPad();
+  const g0=G;
+  countdown(()=>{if(G!==g0)return;G.lock=false; if(mode==='race'){G.end=performance.now()+G.dur;tick()} ask()});
+}
+function countdown(done){
+  const ov=$('#ov'); ov.classList.add('on'); let i=3;
+  const step=()=>{ if(i===0){ov.innerHTML=`<div class="count" style="font-size:90px">Start!</div>`;beep(1046,.25,'square',.08);setTimeout(()=>{ov.classList.remove('on');done()},500);return}
+    ov.innerHTML=`<div class="count">${i}</div>`;beep(523,.12,'square',.06);i--;setTimeout(step,700)};
+  step();
+}
+function tick(){
+  const left=G.end-performance.now();
+  const pct=Math.max(0,left/G.dur*100);
+  $('#tbar').style.width=pct+'%'; $('#tsec').textContent=Math.ceil(Math.max(0,left)/1000)+' s';
+  $('#timer').classList.toggle('low',left<10000);
+  if(left<=0){finish();return}
+  G.raf=requestAnimationFrame(tick);
+}
+function ask(){
+  G.cur=nextFact(); G.input=''; G.t0=performance.now();
+  G.recent.push(G.cur.k); if(G.recent.length>3) G.recent.shift();
+  $('#qc').className='qcard'; $('#fix').textContent='';
+  drawQ();
+  if(G.mode==='practice'){const d=$('#dots').children;if(d[G.q])d[G.q].className='cur'}
+}
+function answerOf(f){return f.op==='m'?f.n*f.t:f.n}
+function qText(f){return f.op==='m'?`${f.n} × ${f.t}`:`${f.n*f.t} : ${f.t}`}
+function drawQ(){$('#q').innerHTML=`${qText(G.cur)} = <span class="ans">${G.input||'&nbsp;'}</span>`}
+function press(k){
+  if(!G||G.lock) return;
+  if(k==='bs'){G.input=G.input.slice(0,-1);drawQ();return}
+  if(k==='ok'){if(G.input)check();return}
+  if(G.input.length>=3) return;
+  G.input+=k; drawQ();
+  if(G.input.length===String(answerOf(G.cur)).length){G.lock=true;setTimeout(check,110)}
+}
+function setRobbie(mood,anim,text){$('#rb').innerHTML=robbie(mood,58,anim);if(text)$('#say').textContent=text}
+function check(){
+  if(!G) return;
+  if(G.mode==='boss') return bossCheck(false);
+  if(G.mode==='duel') return duelCheck();
+  const g=G;
+  G.lock=true;
+  const f=G.cur, ms=performance.now()-G.t0, ok=Number(G.input)===answerOf(f), p=P();
+  const st=p.facts[f.k]||(p.facts[f.k]={n:0,ok:0,t:[]});
+  st.n++;
+  G.log.push({k:f.k,f,ok,ms});
+  if(ok){
+    st.ok++; st.last=1; st.t.push(Math.round(ms)); if(st.t.length>5) st.t.shift();
+    const fast=ms<3000, pts=fast?2:1; G.combo++; G.score+=pts;
+    let msg=fast?rnd(['Bliksemsnel! ⚡','Zoef! ⚡','Supersnel!','Raketsnel! ⚡']):rnd(['Goed zo!','Juist!','Prima!','Top!']);
+    let extra='';
+    if(G.combo%5===0){G.score+=3;extra=' +3 TURBO';msg=`${G.combo} op rij! TURBO! 🔥`;sTurbo()} else sOk(fast);
+    $('#qc').className='qcard ok';
+    const fl=document.createElement('div');fl.className='float';fl.textContent='+'+pts+(fast?' ⚡':' ⭐')+extra;$('#qc').appendChild(fl);
+    setRobbie(fast||G.combo%5===0?'wow':'happy','bounce',msg);
+  }else{
+    st.last=0; G.combo=0; sBad();
+    G.retry.push({f,at:G.q+3});
+    $('#qc').className='qcard bad';
+    $('#fix').textContent=`${qText(f)} = ${answerOf(f)}`;
+    setRobbie('think','shake',rnd(['Oei, bijna! Kijk goed:','Niet erg! Onthoud:','Probeer het te onthouden:']));
+  }
+  if(G.mode==='practice'){$('#dots').children[G.q].className=ok?'ok':'bad'}
+  G.q++;
+  updateHud();
+  save();
+  setTimeout(()=>{
+    if(G!==g) return;
+    if(G.mode==='race'&&performance.now()>=G.end) return;
+    if(G.mode==='practice'&&G.q>=PRACTICE_N){finish();return}
+    G.lock=false; ask();
+  }, ok?260:1500);
+}
+function updateHud(){
+  $('#score').textContent=G.score+' ⭐';
+  $('#combo').textContent=G.combo>=2?'🔥 '+G.combo:'';
+  $('#rocket').style.bottom=`calc(${Math.min(G.score/TRACK_MAX,1)*100}% - 20px)`;
+  PLANETS.forEach((pl,i)=>{if(G.score>=pl.at){const el=$('#pl'+i);if(!el.classList.contains('hit')){el.classList.add('hit');if(i>G.hit){G.hit=i;$('#say').textContent=`Je bent voorbij ${pl.n}! ${pl.e}`}}}});
+}
+function quitGame(){if(!G)return;cancelAnimationFrame(G.raf);G.lock=true;G=null;renderMenu()}
+
+/* ---------- Einde ronde ---------- */
+function finish(){
+  cancelAnimationFrame(G.raf); G.lock=true;
+  const p=P(), today=dk(new Date()), earned=[];
+  const give=id=>{if(!p.badges.includes(id)){p.badges.push(id);earned.push(BADGES.find(b=>b.id===id))}};
+  if(G.log.length) p.days[today]=(p.days[today]||0)+1;
+  p.stars=(p.stars||0)+G.score;
+  const tk=addFuel(p,G.log.filter(l=>l.ok).length);
+  let newRec=false, prev=G.rec;
+  if(G.mode==='race'&&G.log.length){
+    give('first');
+    if(G.score>prev){p.records[recKey(p)]=G.score;if(prev>0){newRec=true;give('rec')}}
+    PLANETS.forEach((pl,i)=>{if(G.score>=pl.at)give('p'+i)});
+  }
+  if((p.days[today]||0)>=DAY_GOAL) give('goal');
+  const s=streak(p); if(s>=3)give('s3'); if(s>=5)give('s5'); if(s>=10)give('s10');
+  const bc=boltCount(p); if(bc>=1)give('bolt'); if(bc>=5)give('bolt5');
+  save();
+
+  const okc=G.log.filter(l=>l.ok).length, okTimes=G.log.filter(l=>l.ok).map(l=>l.ms);
+  const avg=okTimes.length?(okTimes.reduce((a,b)=>a+b,0)/okTimes.length/1000):0;
+  const hardSet=new Map();
+  G.log.filter(l=>!l.ok).forEach(l=>hardSet.set(l.k,l.f));
+  G.log.filter(l=>l.ok&&l.ms>4500).sort((a,b)=>b.ms-a.ms).slice(0,3).forEach(l=>hardSet.set(l.k,l.f));
+  const hard=[...hardSet.values()].slice(0,6);
+  let reached=-1; PLANETS.forEach((pl,i)=>{if(G.score>=pl.at)reached=i});
+
+  let head;
+  if(G.mode==='race'){
+    head=newRec?`<div class="newrec">🏆 NIEUW RECORD! (vorige: ${prev})</div>`
+      :prev&&G.score<prev?`<div class="muted" style="font-size:19px">Nog <b>${prev-G.score+1}</b> ⭐ meer en je verbreekt je record (${prev})!</div>`
+      :prev&&G.score===prev?`<div class="muted" style="font-size:19px">Precies je record! Volgende keer 1 ⭐ meer?</div>`
+      :`<div class="muted" style="font-size:19px">Je eerste record staat er! Kan je het morgen verbreken?</div>`;
+  }else head=`<div class="muted" style="font-size:19px">${okc} van de ${PRACTICE_N} sommen juist.</div>`;
+
+  $('#s-result').innerHTML=`
+   <div class="card res">
+     <div>${robbie(newRec||reached>=2?'wow':'happy',100,'bounce')}</div>
+     <div class="big">${G.score} ⭐</div>
+     <div class="planet">${reached>=0?`Je raket vloog tot <b>${PLANETS[reached].n}</b> ${PLANETS[reached].e}`:'Je raket is opgestegen! 🚀'}</div>
+     ${head}
+     <div class="stats"><div>${okc}/${G.log.length}<small>juist</small></div><div>${avg?avg.toFixed(1).replace('.',','):'–'} s<small>gemiddeld per som</small></div></div>
+     <div class="muted" style="font-size:17px">⛽ +${okc} brandstof voor Robbie's jetpack</div>
+     ${tk?`<div class="newrec" style="margin-top:8px;background:var(--coral);color:#fff">🎟️ Speelticket verdiend!</div>`:''}
+     ${hard.length?`<div class="lbl" style="margin-top:12px">Robbie zegt: deze oefen je nog eens</div>
+       <div class="hard">${hard.map(f=>`<span>${qText(f)} = ${answerOf(f)}</span>`).join('')}</div>`:`<div style="font-size:20px;margin-top:10px">Geen enkele moeilijke som! 🌟</div>`}
+     ${earned.length?`<div class="lbl" style="margin-top:16px">Nieuw in je verzameling!</div>
+       <div class="newbadges">${earned.map(b=>`<div><b>${b.e}</b>${b.t}</div>`).join('')}</div>`:''}
+   </div>
+   ${p.tickets?`<button class="btn big coral" style="margin-top:16px" data-a="catch">🎮 Naar de speelhoek ${'🎟️'.repeat(p.tickets)}</button>`:''}
+   <div class="grid2" style="margin-top:16px">
+     <button class="btn big yellow" data-a="${G.mode==='race'?'race':'practice'}">${G.mode==='race'?'🚀 Nog een race!':'🐢 Nog eens oefenen'}</button>
+     <button class="btn big" data-a="menu">🏠 Menu</button>
+   </div>`;
+  show('s-result');
+  if(newRec||earned.length||tk){sFan();confetti()}
+  G=null;
+}
+function confetti(){
+  const cs=['#ffd23f','#ff6b6b','#2ec4b6','#8a6cff','#3ccf6e'];
+  for(let i=0;i<70;i++){const c=document.createElement('div');c.className='confetti';
+    c.style.left=Math.random()*100+'vw';c.style.background=rnd(cs);c.style.animationDuration=(1.8+Math.random()*1.8)+'s';c.style.animationDelay=Math.random()*.5+'s';
+    document.body.appendChild(c);setTimeout(()=>c.remove(),4200)}
+}
+
+/* ---------- Gedeelde stukjes voor de eindschermen ---------- */
+function dayBadges(p,give){
+  if((p.days[dk(new Date())]||0)>=DAY_GOAL) give('goal');
+  const s=streak(p); if(s>=3)give('s3'); if(s>=5)give('s5'); if(s>=10)give('s10');
+  const bc=boltCount(p); if(bc>=1)give('bolt'); if(bc>=5)give('bolt5');
+}
+function hardOf(log){const m=new Map();log.filter(l=>!l.ok).forEach(l=>m.set(l.k,l.f));return [...m.values()].slice(0,6)}
+function extrasHTML(okc,tk,hard,earned){
+  return `<div class="muted" style="font-size:17px;margin-top:8px">⛽ +${okc} brandstof voor Robbie's jetpack</div>
+     ${tk?`<div class="newrec" style="margin-top:8px;background:var(--coral);color:#fff">🎟️ Speelticket verdiend!</div>`:''}
+     ${hard.length?`<div class="lbl" style="margin-top:12px">Robbie zegt: deze oefen je nog eens</div>
+       <div class="hard">${hard.map(f=>`<span>${qText(f)} = ${answerOf(f)}</span>`).join('')}</div>`:''}
+     ${earned.length?`<div class="lbl" style="margin-top:16px">Nieuw in je verzameling!</div>
+       <div class="newbadges">${earned.map(b=>`<div><b>${b.e}</b>${b.t}</div>`).join('')}</div>`:''}`;
+}
+const arcadeBtn=p=>p.tickets?`<button class="btn big coral" style="margin-top:16px" data-a="catch">🎮 Naar de speelhoek ${'🎟️'.repeat(p.tickets)}</button>`:'';
+
+/* ---------- Spelvorm: Wedstrijd tegen Bugbot ---------- */
+const DUEL_GOAL=12;
+/* seconden die Bugbot per som nodig heeft: niveau 1 = 7 s, elk niveau sneller, minimum 2 s */
+const duelMs=lv=>Math.max(2000,lv<=8?7000-500*(lv-1):3500-250*(lv-8));
+function startDuel(){
+  const p=P(); if(!p.tables.length) return;
+  const rk=shopItem('rocket',p.look.rocket), lv=p.duelLv||1;
+  G={mode:'duel',pool:buildPool(p),score:0,combo:0,q:0,log:[],retry:[],recent:[],input:'',lock:true,raf:0,cur:null,
+     goal:DUEL_GOAL,lv,bms:duelMs(lv),start:0,done:false};
+  $('#s-game').innerHTML=`
+   <div class="track" id="track"><div class="finish">🏁</div>
+     <div class="rocket" id="rocket" style="left:30%;font-size:32px;margin-left:-18px;transform:rotate(${rk.rot}deg)">${rk.e}</div>
+     <div class="rocket" id="brocket" style="left:72%;font-size:28px;margin-left:-16px;transform:none;transition:none">👾</div></div>
+   <div class="gmain">
+     <div class="ghead"><button class="quit" data-a="quit" aria-label="Stoppen">✕</button>
+       <div class="grow white" id="duelsc" style="font-size:20px;font-weight:700;text-align:center">Jij 0 – 0 Bugbot</div>
+       <div class="combo" style="text-align:right">Niveau ${lv}</div></div>
+     <div class="grobbie"><div id="rb">${robbie('happy',58)}</div><div class="bubble grow" id="say">Wie heeft eerst ${DUEL_GOAL} sommen juist: jij of Bugbot?</div><div id="bb">${bugbot('grin',58)}</div></div>
+     <div class="qcard" id="qc"><div class="q" id="q">&nbsp;</div><div class="fix" id="fix"></div></div>
+     ${padHTML()}
+   </div>`;
+  show('s-game'); bindPad();
+  const g0=G;
+  countdown(()=>{if(G!==g0)return;G.lock=false;G.start=performance.now();duelTick();ask()});
+}
+function duelTick(){
+  if(!G||G.mode!=='duel'||G.done) return;
+  const b=(performance.now()-G.start)/G.bms;
+  $('#brocket').style.bottom=Math.min(b/G.goal,1)*88+'%';
+  $('#duelsc').textContent=`Jij ${G.score} – ${Math.min(G.goal,Math.floor(b))} Bugbot`;
+  if(b>=G.goal){duelEnd(false);return}
+  G.raf=requestAnimationFrame(duelTick);
+}
+function duelCheck(){
+  if(!G||G.done) return;
+  const g=G; G.lock=true;
+  const f=G.cur, ms=performance.now()-G.t0, ok=Number(G.input)===answerOf(f), p=P();
+  const st=p.facts[f.k]||(p.facts[f.k]={n:0,ok:0,t:[]}); st.n++;
+  G.log.push({k:f.k,f,ok,ms});
+  if(ok){
+    st.ok++; st.last=1; st.t.push(Math.round(ms)); if(st.t.length>5) st.t.shift();
+    G.score++; G.combo++; sOk(ms<3000);
+    $('#qc').className='qcard ok'; $('#rocket').style.bottom=G.score/G.goal*88+'%';
+    setRobbie(ms<3000?'wow':'happy','bounce',G.score>=G.goal?'Over de finish! 🏁':rnd(['Gas erop!','Juist! Vooruit!','Zoef! ⚡','Je raket schiet omhoog!']));
+  }else{
+    st.last=0; G.combo=0; sBad(); G.retry.push({f,at:G.q+3});
+    $('#qc').className='qcard bad'; $('#fix').textContent=`${qText(f)} = ${answerOf(f)}`;
+    setRobbie('think','shake','Oei! Bugbot loopt in…');
+  }
+  G.q++; save();
+  if(ok&&G.score>=G.goal){G.done=true;cancelAnimationFrame(G.raf);setTimeout(()=>{if(G===g)duelEnd(true)},600);return}
+  setTimeout(()=>{if(G!==g||G.done)return;G.lock=false;ask()},ok?260:1500);
+}
+function duelEnd(win){
+  G.done=true; cancelAnimationFrame(G.raf);
+  const p=P(), today=dk(new Date()), earned=[], lv=G.lv, score=G.score, goal=G.goal;
+  const give=id=>{if(!p.badges.includes(id)){p.badges.push(id);earned.push(BADGES.find(b=>b.id===id))}};
+  if(G.log.length) p.days[today]=(p.days[today]||0)+1;
+  const okc=G.log.filter(l=>l.ok).length, tk=addFuel(p,okc), stars=okc+(win?10:0);
+  p.stars=(p.stars||0)+stars;
+  let down=false;
+  if(win){p.duelLv=lv+1;p.duelLoss=0;give('duel');if(lv+1>=5)give('duel5')}
+  else{p.duelLoss=(p.duelLoss||0)+1;if(p.duelLoss>=2&&lv>1){p.duelLv=lv-1;p.duelLoss=0;down=true}}
+  dayBadges(p,give); save();
+  $('#s-result').innerHTML=`
+   <div class="card res">
+     <div>${win?robbie('wow',100,'bounce'):bugbot('grin',90,'bounce')}</div>
+     <div class="big" style="font-size:46px">${win?'🏁 Gewonnen!':'Bugbot was eerst…'}</div>
+     <div class="planet">${win?`Je was sneller dan Bugbot op niveau ${lv}.`:`Jij had er al <b>${score} van de ${goal}</b>.`}</div>
+     <div class="muted" style="font-size:19px">${win?`Volgende keer vliegt hij sneller: <b>niveau ${lv+1}</b>!`:down?`Bugbot vliegt de volgende keer iets trager (niveau ${lv-1}).`:'Nog één keer proberen? Je kan het!'}</div>
+     <div style="font-size:19px;margin-top:10px">+${stars} ⭐ voor de werkplaats</div>
+     ${extrasHTML(okc,tk,hardOf(G.log),earned)}
+   </div>
+   ${arcadeBtn(p)}
+   <div class="grid2" style="margin-top:16px">
+     <button class="btn big purple" data-a="duel">🏁 Nog een wedstrijd</button>
+     <button class="btn big" data-a="menu">🏠 Menu</button>
+   </div>`;
+  show('s-result');
+  if(win||tk){sFan();confetti()}
+  G=null;
+}
+
+/* ---------- Spelvorm: Poortenvlucht ---------- */
+function gateOpts(f){
+  const a=answerOf(f), c=new Set(), add=v=>{if(v>0&&v!==a)c.add(v)};
+  if(f.op==='m'){add((f.n+1)*f.t);add((f.n-1)*f.t);add((f.n+2)*f.t);add(a+1);add(a-1);add(f.n*(f.t+1));add(f.n*(f.t-1))}
+  else{add(a+1);add(a-1);add(a+2);add(a-2);add(f.t)}
+  const sh=x=>{for(let i=x.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[x[i],x[j]]=[x[j],x[i]]}return x};
+  const arr=sh([...c]).slice(0,2); arr.push(a); return sh(arr);
+}
+function startGates(){
+  const p=P(); if(!p.tables.length) return;
+  const rk=shopItem('rocket',p.look.rocket);
+  G={mode:'gates',pool:buildPool(p),score:0,okc:0,q:0,log:[],retry:[],recent:[],lives:3,lock:true,raf:0,cur:null,judged:true,
+     rec:p.records['gate|'+recKey(p)]||0};
+  $('#s-catch').innerHTML=`
+   <div class="ghead"><button class="quit" data-a="quit" aria-label="Stoppen">✕</button>
+     <div class="lives" id="lives" style="text-align:left">❤️❤️❤️</div>
+     <div class="grow recline" id="chint" style="margin:0">Snelheid 1</div>
+     <div class="score" id="score">0 ⭐</div></div>
+   <div class="qcard" id="qc"><div class="q" id="q">&nbsp;</div><div class="fix" id="fix"></div></div>
+   <div class="field" id="field"><div class="gates" id="gates"></div>
+     <div class="grocket" id="grocket" style="transform:rotate(${rk.rot}deg)">${rk.e}</div></div>`;
+  show('s-catch');
+  $('#field').addEventListener('pointerdown',e=>{const b=e.target.closest('.gate');if(!b||!G||G.judged)return;e.preventDefault();gatesJudge(+b.dataset.i)});
+  const g0=G;
+  countdown(()=>{if(G!==g0)return;gatesAsk()});
+}
+function gatesAsk(){
+  G.cur=nextFact(); G.recent.push(G.cur.k); if(G.recent.length>3) G.recent.shift();
+  G.opts=gateOpts(G.cur); G.judged=false;
+  const sp=Math.floor(G.okc/3); G.dur=Math.max(1700,6000*Math.pow(.92,sp));
+  $('#chint').textContent='Snelheid '+(sp+1);
+  $('#qc').className='qcard'; $('#fix').textContent='';
+  $('#q').innerHTML=`${qText(G.cur)} = <span class="ans">?</span>`;
+  $('#gates').style.transform='translateY(0)';
+  $('#gates').innerHTML=G.opts.map((v,i)=>`<button class="gate" data-i="${i}">${v}</button>`).join('');
+  G.t0=performance.now(); gatesTick();
+}
+function gatesTick(){
+  if(!G||G.mode!=='gates'||G.judged) return;
+  const fr=(performance.now()-G.t0)/G.dur, h=$('#field').clientHeight;
+  $('#gates').style.transform=`translateY(${Math.min(fr,1)*(h-84-78)}px)`;
+  if(fr>=1){gatesJudge(-1);return}
+  G.raf=requestAnimationFrame(gatesTick);
+}
+function gatesJudge(i){
+  if(!G||G.judged) return; G.judged=true; cancelAnimationFrame(G.raf);
+  const g=G, f=G.cur, ms=performance.now()-G.t0, a=answerOf(f), ok=i>=0&&G.opts[i]===a, p=P();
+  const st=p.facts[f.k]||(p.facts[f.k]={n:0,ok:0,t:[]}); st.n++;
+  G.log.push({k:f.k,f,ok,ms});
+  const btns=[...document.querySelectorAll('#gates .gate')];
+  if(i>=0) $('#grocket').style.left=((i*2+1)/6*100)+'%';
+  if(ok){
+    /* kiezen is makkelijker dan zelf typen: telt als juist, maar nooit als 'bliksemsnel' */
+    st.ok++; st.last=1; st.t.push(Math.max(3000,Math.round(ms))); if(st.t.length>5) st.t.shift();
+    const pts=ms<G.dur/2?2:1; G.score+=pts; G.okc++; btns[i].classList.add('ok'); sOk(pts>1);
+    $('#qc').className='qcard ok';
+    const fl=document.createElement('div');fl.className='float';fl.textContent='+'+pts+(pts>1?' ⚡':' ⭐');$('#qc').appendChild(fl);
+  }else{
+    if(i>=0){st.last=0;btns[i].classList.add('bad')}
+    btns[G.opts.indexOf(a)].classList.add('ok');
+    G.lives--; G.retry.push({f,at:G.q+3}); sBad();
+    $('#lives').innerHTML='❤️'.repeat(G.lives)+`<span style="opacity:.25">${'❤️'.repeat(3-G.lives)}</span>`;
+    $('#qc').className='qcard bad'; $('#fix').textContent=i<0?'Te laat! Kijk naar de groene poort.':'Oei! Kijk naar de groene poort.';
+  }
+  $('#q').innerHTML=`${qText(f)} = <span class="ans">${a}</span>`;
+  G.q++; $('#score').textContent=G.score+' ⭐'; save();
+  setTimeout(()=>{if(G!==g)return;if(G.lives<=0)gatesEnd();else gatesAsk()},ok?450:1600);
+}
+function gatesEnd(){
+  cancelAnimationFrame(G.raf);
+  const p=P(), today=dk(new Date()), earned=[], score=G.score, prev=G.rec;
+  const give=id=>{if(!p.badges.includes(id)){p.badges.push(id);earned.push(BADGES.find(b=>b.id===id))}};
+  if(G.log.length) p.days[today]=(p.days[today]||0)+1;
+  const okc=G.log.filter(l=>l.ok).length, tk=addFuel(p,okc);
+  p.stars=(p.stars||0)+score;
+  const rec=score>prev; if(rec) p.records['gate|'+recKey(p)]=score;
+  if(score>=20) give('gate');
+  dayBadges(p,give); save();
+  $('#s-result').innerHTML=`
+   <div class="card res">
+     <div>${robbie(rec&&prev?'wow':'happy',100,'bounce')}</div>
+     <div class="big">${score} ⭐</div>
+     <div class="planet">🌀 Poortenvlucht: ${okc} poorten juist, tot snelheid ${Math.floor(G.okc/3)+1}</div>
+     ${rec&&prev?`<div class="newrec">🏆 NIEUW RECORD! (vorige: ${prev})</div>`
+       :prev?`<div class="muted" style="font-size:19px">Jouw record: <b>${prev}</b>. Nog ${prev-score+1} ⭐ meer en je verbreekt het!</div>`
+       :`<div class="muted" style="font-size:19px">Je eerste record staat er! Kan je het verbreken?</div>`}
+     ${extrasHTML(okc,tk,hardOf(G.log),earned)}
+   </div>
+   ${arcadeBtn(p)}
+   <div class="grid2" style="margin-top:16px">
+     <button class="btn big orange" data-a="gates">🌀 Nog een vlucht</button>
+     <button class="btn big" data-a="menu">🏠 Menu</button>
+   </div>`;
+  show('s-result');
+  if((rec&&prev)||earned.length||tk){sFan();confetti()}
+  G=null;
+}
+
+/* ---------- Eindbaas Bugbot ---------- */
+function startBoss(t,op){
+  const p=P();
+  const q=Array.from({length:10},(_,i)=>({op,t,n:i+1,k:fkey(op,t,i+1)}));
+  for(let i=q.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[q[i],q[j]]=[q[j],q[i]]}
+  G={mode:'boss',t,op,queue:q,lives:3,done:0,input:'',lock:true,raf:0,cur:null,log:[],judged:false,end:0};
+  $('#s-game').innerHTML=`
+   <div class="track boss" id="track">${Array.from({length:10},(_,i)=>`<div id="bug${i}">🐛</div>`).join('')}</div>
+   <div class="gmain">
+     <div class="ghead"><button class="quit" data-a="quit" aria-label="Stoppen">✕</button>
+       <div class="timer" id="timer"><div id="tbar"></div><span id="tsec"></span></div>
+       <div class="lives" id="lives">🔋🔋🔋</div></div>
+     <div class="grobbie"><div id="rb">${robbie('happy',58)}</div><div class="bubble grow" id="say">Bugbot daagt je uit: de ${op==='d'?'deeltafel':'maaltafel'} van ${t}! Vang zijn 10 bugs.</div><div id="bb">${bugbot('grin',58)}</div></div>
+     <div class="qcard" id="qc"><div class="q" id="q">&nbsp;</div><div class="fix" id="fix"></div></div>
+     ${padHTML()}
+   </div>`;
+  show('s-game'); bindPad();
+  const g0=G;
+  countdown(()=>{if(G!==g0)return;bossAsk()});
+}
+function bossAsk(){
+  G.cur=G.queue.shift(); G.input=''; G.judged=false; G.t0=performance.now(); G.end=G.t0+BOSS_MS;
+  $('#qc').className='qcard'; $('#fix').textContent=''; drawQ(); G.lock=false; bossTick();
+}
+function bossTick(){
+  if(!G||G.mode!=='boss'||G.judged) return;
+  const left=G.end-performance.now();
+  $('#tbar').style.width=Math.max(0,left/BOSS_MS*100)+'%'; $('#tsec').textContent=Math.ceil(Math.max(0,left)/1000)+' s';
+  $('#timer').classList.toggle('low',left<2500);
+  if(left<=0){bossCheck(true);return}
+  G.raf=requestAnimationFrame(bossTick);
+}
+function bossCheck(timeout){
+  if(!G||G.judged) return; G.judged=true; G.lock=true; cancelAnimationFrame(G.raf);
+  const g=G, f=G.cur, ms=performance.now()-G.t0, ok=!timeout&&Number(G.input)===answerOf(f), p=P();
+  const st=p.facts[f.k]||(p.facts[f.k]={n:0,ok:0,t:[]}); st.n++;
+  G.log.push({k:f.k,f,ok,ms});
+  if(ok){
+    st.ok++; st.last=1; st.t.push(Math.round(ms)); if(st.t.length>5) st.t.shift();
+    const b=$('#bug'+G.done); b.textContent='💥'; b.className='zap'; G.done++; sOk(ms<3000);
+    $('#qc').className='qcard ok'; $('#bb').innerHTML=bugbot('ouch',58,'shake');
+    setRobbie('wow','bounce',G.done<10?`Raak! Nog ${10-G.done} bug${10-G.done>1?'s':''}!`:'Bugbot is verslagen!');
+  }else{
+    if(timeout){st.t.push(BOSS_MS); if(st.t.length>5) st.t.shift()} else st.last=0;
+    G.lives--; G.queue.push(f); sBad();
+    $('#lives').innerHTML='🔋'.repeat(G.lives)+`<span style="opacity:.2">${'🔋'.repeat(3-G.lives)}</span>`;
+    $('#qc').className='qcard bad'; $('#fix').textContent=`${qText(f)} = ${answerOf(f)}`;
+    $('#bb').innerHTML=bugbot('grin',58,'bounce');
+    setRobbie('think','shake',timeout?'Te traag! Bugbot pikt een batterij!':'Oei! Bugbot pikt een batterij!');
+  }
+  save();
+  setTimeout(()=>{ if(G!==g) return;
+    if(G.done>=10) bossEnd(true); else if(G.lives<=0) bossEnd(false); else bossAsk(); }, ok?450:1700);
+}
+function bossEnd(win){
+  cancelAnimationFrame(G.raf);
+  const p=P(), today=dk(new Date()), t=G.t, op=G.op, k=op+t, lives=G.lives, done=G.done, earned=[];
+  const give=id=>{if(!p.badges.includes(id)){p.badges.push(id);earned.push(BADGES.find(b=>b.id===id))}};
+  p.days[today]=(p.days[today]||0)+1;
+  const tk=addFuel(p,G.log.filter(l=>l.ok).length);
+  let bonus=0, extraTk=0;
+  if(win){
+    const first=!p.diplomas[k]; bonus=first?35:10;
+    p.diplomas[k]=Math.max(p.diplomas[k]||0,lives);
+    if(first&&p.tickets<TK_STORE+1){p.tickets++;extraTk=1}
+    give('boss'); if(Object.keys(p.diplomas).length>=5) give('boss5');
+  }
+  p.stars=(p.stars||0)+bonus;
+  if((p.days[today]||0)>=DAY_GOAL) give('goal');
+  const s=streak(p); if(s>=3)give('s3'); if(s>=5)give('s5'); if(s>=10)give('s10');
+  const bc=boltCount(p); if(bc>=1)give('bolt'); if(bc>=5)give('bolt5');
+  save();
+  const hm=new Map(); G.log.filter(l=>!l.ok).forEach(l=>hm.set(l.k,l.f)); const hard=[...hm.values()];
+  const badges=earned.length?`<div class="lbl" style="margin-top:16px">Nieuw in je verzameling!</div>
+       <div class="newbadges">${earned.map(b=>`<div><b>${b.e}</b>${b.t}</div>`).join('')}</div>`:'';
+  const tname=(op==='d'?'deeltafel':'maaltafel')+' van '+t;
+  const card=win?`<div class="card res diploma">
+     <div>${robbie('wow',90,'bounce')}</div>
+     <div class="dipl-t">DIPLOMA</div>
+     <div style="font-size:26px;font-weight:700">${p.avatar} ${esc(p.name)}</div>
+     <div style="font-size:20px;margin:6px 0">versloeg Bugbot en kent de <b>${tname}</b>!</div>
+     <div style="font-size:44px">${'⭐'.repeat(lives)}<span style="opacity:.2">${'⭐'.repeat(3-lives)}</span></div>
+     <div class="muted" style="font-size:17px">${lives===3?'Foutloos! Beter kan niet.':'Zonder fout krijg je 3 sterren. Probeer je het later nog eens?'}</div>
+     <div style="font-size:19px;margin-top:10px">+${bonus} ⭐ voor de werkplaats${extraTk||tk?' · 🎟️ speelticket erbij!':''}</div>
+     ${badges}</div>`
+   :`<div class="card res">
+     <div>${bugbot('grin',90,'bounce')}</div>
+     <h2 style="margin:8px 0">Bugbot won deze keer…</h2>
+     <div style="font-size:20px">Je had al <b>${done} van de 10</b> bugs! Oefen deze nog even en daag hem opnieuw uit.</div>
+     <div class="hard">${hard.map(f=>`<span>${qText(f)} = ${answerOf(f)}</span>`).join('')}</div>
+     ${tk?`<div class="newrec" style="margin-top:12px;background:var(--coral);color:#fff">🎟️ Speelticket verdiend!</div>`:''}
+     ${badges}</div>`;
+  $('#s-result').innerHTML=card+`
+   <div class="grid2" style="margin-top:16px">
+     ${win&&p.tickets?`<button class="btn big coral" data-a="catch">🎮 Naar de speelhoek</button>`
+       :`<button class="btn big yellow" data-a="boss" data-o="${op}" data-t="${t}">👾 ${win?'Nog eens voor 3 sterren':'Opnieuw proberen'}</button>`}
+     <button class="btn big" data-a="menu">🏠 Menu</button>
+   </div>`;
+  show('s-result');
+  if(win){sFan();confetti()}
+  G=null;
+}
+
+/* ---------- Speelhoek: 3 beloningsspelletjes ---------- */
+const GAMES=[
+ {id:'catch',e:'⭐',n:'Sterrenvanger',d:'Vlieg met de jetpack, vang sterren en ontwijk meteorieten.',h:'Sleep of tik om Robbie te sturen. Vang ⭐ en 🌟, ontwijk ☄️!',r:'sterren gevangen',m:[20,35,50]},
+ {id:'whack',e:'🐛',n:'Bugs meppen',d:'Tik de bugs van Bugbot weg. Maar pas op: niet op Robbie!',h:'Tik op 🐛 (+1) en 🐞 (+3). Niet op Robbie tikken!',r:'punten met bugs meppen',m:[20,32,44]},
+ {id:'memo',e:'🧠',n:"Robbie's geheugen",d:'Onthoud de lichtjes en tik ze na. De reeks wordt steeds langer.',h:'Kijk goed naar de lichtjes…',r:'lichtjes op rij onthouden',m:[5,7,9]}];
+const gameOf=id=>GAMES.find(g=>g.id===id);
+const MEDALS=['🥉','🥈','🥇'];
+const medalOf=(g,sc)=>{let m='';g.m.forEach((v,i)=>{if(sc>=v)m=MEDALS[i]});return m};
+let C=null;
+function renderArcade(){
+  const p=P(); if(!p) return renderPlayers();
+  $('#s-arcade').innerHTML=`
+   <div class="topbar"><button class="btn ghost" data-a="menu">← Terug</button><div class="who" style="font-size:22px">🎮 Speelhoek</div><div class="grow"></div>
+     <div class="who" style="font-size:22px">${'🎟️'.repeat(p.tickets)||'🔒'}</div></div>
+   <div class="row nowrap" style="margin-bottom:14px"><div>${robbie('happy',70)}</div>
+     <div class="bubble grow">${p.tickets?`Kies één spel. Je speelt ${CATCH_SEC} seconden. Haal jij goud?`:'Je tickets zijn op. Oefen verder om er een te verdienen!'}</div></div>
+   <div class="games">${GAMES.map(g=>{const b=p.best[g.id]||0;return `<div class="card gcard">
+      <div class="ge">${g.e}</div><h3>${g.n}</h3>
+      <div class="muted" style="font-size:16px;min-height:60px">${g.d}</div>
+      <div style="font-size:15px;margin:8px 0">🥉 ${g.m[0]} · 🥈 ${g.m[1]} · 🥇 ${g.m[2]}</div>
+      <div style="font-size:17px;font-weight:600;margin-bottom:10px">Jouw record: ${b} ${medalOf(g,b)}</div>
+      <button class="btn coral" style="width:100%" data-a="play" data-g="${g.id}" ${p.tickets?'':'disabled'}>Speel!</button></div>`}).join('')}</div>`;
+  show('s-arcade');
+}
+function startArcade(id){
+  const p=P(), g=gameOf(id); if(!p||!g||!p.tickets) return;
+  p.tickets--; if(!p.badges.includes('catch')) p.badges.push('catch'); save();
+  $('#s-catch').innerHTML=`
+   <div class="ghead"><button class="quit" data-a="catchQuit" aria-label="Stoppen">✕</button>
+     <div class="timer" id="ctimer"><div id="cbar"></div><span id="csec"></span></div>
+     <div class="score" id="cscore">0 ⭐</div></div>
+   <div class="recline" id="chint" style="margin:0">${g.h}</div>
+   <div class="field" id="field"></div>`;
+  show('s-catch');
+  C={game:id,f:$('#field'),score:0,dur:CATCH_SEC*1000,end:0,last:0,next:0,raf:0,dir:0,run:false};
+  ({catch:initCatch,whack:initWhack,memo:initMemo})[id]();
+  const c0=C;
+  countdown(()=>{if(C!==c0)return;C.run=true;C.last=performance.now();C.end=C.last+C.dur;
+    C.raf=requestAnimationFrame(arcLoop); if(id==='memo') memoNext(true)});
+}
+function arcLoop(now){
+  if(!C||!C.run) return;
+  const dt=Math.min(50,now-C.last)/1000; C.last=now;
+  const left=C.end-now, prog=1-Math.max(0,left)/C.dur;
+  $('#cbar').style.width=Math.max(0,left/C.dur*100)+'%'; $('#csec').textContent=Math.ceil(Math.max(0,left)/1000)+' s';
+  $('#ctimer').classList.toggle('low',left<8000);
+  if(left<=0){endArcade();return}
+  if(C.game==='catch') catchStep(now,dt,prog); else if(C.game==='whack') whackStep(now,prog);
+  C.raf=requestAnimationFrame(arcLoop);
+}
+function setScore(v){C.score=Math.max(0,v);$('#cscore').textContent=C.score+' ⭐'}
+function popAt(x,y,d){
+  const pop=document.createElement('div'); pop.className='pop'+(d<0?' neg':''); pop.textContent=(d>0?'+':'')+d;
+  pop.style.left=x+'px'; pop.style.top=y+'px'; C.f.appendChild(pop); setTimeout(()=>pop.remove(),700);
+}
+/* spel 1: Sterrenvanger */
+function initCatch(){
+  const f=C.f; f.innerHTML=`<div class="crob" id="crob">${robbie('happy',70)}<div class="flame">🔥</div></div>`;
+  Object.assign(C,{rob:$('#crob'),w:f.clientWidth,h:f.clientHeight,x:f.clientWidth/2,tx:f.clientWidth/2,items:[]});
+  const mv=e=>{if(!C)return;C.tx=e.clientX-f.getBoundingClientRect().left};
+  f.addEventListener('pointerdown',mv); f.addEventListener('pointermove',mv);
+  C.rob.style.transform=`translateX(${C.x-35}px)`;
+}
+function catchStep(now,dt,prog){
+  C.w=C.f.clientWidth; C.h=C.f.clientHeight;
+  if(C.dir) C.tx+=C.dir*600*dt;
+  C.tx=Math.max(35,Math.min(C.w-35,C.tx));
+  C.x+=(C.tx-C.x)*Math.min(1,dt*14);
+  C.rob.style.transform=`translateX(${C.x-35}px)`;
+  if(now>=C.next){spawnItem(prog);C.next=now+600-330*prog}
+  const top=C.h-24-88;
+  for(let i=C.items.length-1;i>=0;i--){
+    const it=C.items[i]; it.y+=it.v*dt;
+    if(it.y+it.s>top+12&&it.y<top+70&&Math.abs(it.x-C.x)<28+it.s/2){catchItem(it);it.el.remove();C.items.splice(i,1);continue}
+    if(it.y>C.h){it.el.remove();C.items.splice(i,1);continue}
+    it.el.style.transform=`translate(${it.x-it.s/2}px,${it.y}px)`;
+  }
+}
+function spawnItem(prog){
+  const r=Math.random(), type=r<.18+.17*prog?'met':r>.93?'big':'star';
+  const s=type==='big'?46:34, el=document.createElement('div');
+  el.className='item'+(type==='big'?' big':''); el.textContent=type==='met'?'☄️':type==='big'?'🌟':'⭐';
+  const it={el,type,s,x:s/2+Math.random()*(C.w-s),y:-s,v:(160+Math.random()*100)*(1+1.1*prog)*Math.max(.8,C.h/600)};
+  el.style.transform=`translate(${it.x-s/2}px,${it.y}px)`; C.f.appendChild(el); C.items.push(it);
+}
+function catchItem(it){
+  const d=it.type==='met'?-3:it.type==='big'?3:1;
+  setScore(C.score+d); popAt(C.x-12,C.h-160,d);
+  const svg=C.rob.querySelector('svg'); svg.classList.remove('bounce','shake'); void svg.getBoundingClientRect(); svg.classList.add(d<0?'shake':'bounce');
+  if(d<0) sBad(); else beep(d>1?1046:880,.08);
+}
+/* spel 2: Bugs meppen */
+function initWhack(){
+  C.f.style.cssText='display:grid;place-items:center;padding:12px';
+  C.f.innerHTML=`<div class="holes">${Array.from({length:9},(_,i)=>`<button class="hole" data-h="${i}" aria-label="gat ${i+1}"></button>`).join('')}</div>`;
+  C.holes=[...C.f.querySelectorAll('.hole')].map(el=>({el,type:null,until:0}));
+  C.f.addEventListener('pointerdown',e=>{const b=e.target.closest('.hole');if(!b||!C||!C.run)return;e.preventDefault();whackHit(C.holes[+b.dataset.h],b)});
+}
+function whackStep(now,prog){
+  for(const h of C.holes) if(h.type&&now>h.until){h.type=null;h.el.innerHTML=''}
+  if(now>=C.next){
+    const free=C.holes.filter(h=>!h.type);
+    if(free.length){const h=rnd(free), r=Math.random();
+      h.type=r<.18+.07*prog?'rob':r>.92?'gold':'bug';
+      h.el.innerHTML=`<span class="up">${h.type==='rob'?robbie('happy',44):h.type==='gold'?'🐞':'🐛'}</span>`;
+      h.until=now+(h.type==='gold'?.6:1)*(1150-560*prog)}
+    C.next=now+820-440*prog;
+  }
+}
+function whackHit(h,b){
+  if(!h.type) return;
+  const d=h.type==='rob'?-3:h.type==='gold'?3:1;
+  setScore(C.score+d);
+  const r=b.getBoundingClientRect(), fr=C.f.getBoundingClientRect();
+  popAt(r.left-fr.left+r.width/2-12,r.top-fr.top,d);
+  h.type=null; h.el.innerHTML=`<span class="up">${d<0?'😵':'💥'}</span>`;
+  setTimeout(()=>{if(!h.type)h.el.innerHTML=''},180);
+  if(d<0){sBad();$('#chint').textContent='Oeps, dat was Robbie! Mep alleen de bugs.'} else beep(d>1?1046:740,.07);
+}
+/* spel 3: Robbie's geheugen */
+const MEMO_C=['#ff6b6b','#ffd23f','#3ccf6e','#5aa8f0'], MEMO_F=[330,415,523,659];
+function initMemo(){
+  C.f.style.cssText='display:grid;place-items:center;padding:12px';
+  C.f.innerHTML=`<div class="pads">${MEMO_C.map((c,i)=>`<button class="padm" data-m="${i}" style="background:${c};color:${c}" aria-label="licht ${i+1}"></button>`).join('')}</div>`;
+  Object.assign(C,{pads:[...C.f.querySelectorAll('.padm')],seq:[],len:1,pos:0,input:false});
+  C.f.addEventListener('pointerdown',e=>{const b=e.target.closest('.padm');if(!b||!C||!C.run||!C.input)return;e.preventDefault();memoTap(+b.dataset.m)});
+}
+function memoLit(i,ms){const c=C,b=C.pads[i];b.classList.add('lit');beep(MEMO_F[i],ms/1000,'sine',.12);setTimeout(()=>{if(C===c)b.classList.remove('lit')},ms)}
+function memoNext(fresh){
+  const c=C; C.input=false;
+  if(fresh) C.seq=Array.from({length:C.len},()=>Math.floor(Math.random()*4)); else C.seq.push(Math.floor(Math.random()*4));
+  C.len=C.seq.length; C.pos=0;
+  $('#chint').textContent=`👀 Kijk goed… (reeks van ${C.len})`;
+  const on=Math.max(230,420-18*C.len), gap=130;
+  C.seq.forEach((v,i)=>setTimeout(()=>{if(C===c&&C.run)memoLit(v,on)},500+i*(on+gap)));
+  setTimeout(()=>{if(C===c&&C.run){C.input=true;$('#chint').textContent='👉 Jouw beurt! Tik de lichtjes na.'}},500+C.seq.length*(on+gap));
+}
+function memoTap(i){
+  const c=C;
+  if(i===C.seq[C.pos]){
+    memoLit(i,160); C.pos++;
+    if(C.pos===C.seq.length){C.input=false; if(C.len>C.score) setScore(C.len);
+      $('#chint').textContent='✅ Juist! Er komt er eentje bij…';
+      setTimeout(()=>{if(C===c&&C.run)memoNext(false)},450)}
+  }else{
+    C.input=false; sBad(); C.len=Math.max(1,C.len-2);
+    $('#chint').textContent='❌ Oei, fout! Je krijgt een nieuwe, kortere reeks…';
+    setTimeout(()=>{if(C===c&&C.run)memoNext(true)},900);
+  }
+}
+function endArcade(){
+  cancelAnimationFrame(C.raf);
+  const p=P(), g=gameOf(C.game), score=C.score, prev=p.best[g.id]||0, rec=score>prev; C=null;
+  if(rec) p.best[g.id]=score;
+  const md=medalOf(g,score), ni=g.m.findIndex(v=>v>score);
+  if(md==='🥇'&&!p.badges.includes('gold')) p.badges.push('gold');
+  save();
+  $('#s-result').innerHTML=`
+   <div class="card res">
+     <div>${robbie(rec||md?'wow':'happy',100,'bounce')}</div>
+     <div class="big">${score} ⭐</div>
+     <div class="planet">${g.e} ${g.n}: ${g.r}</div>
+     ${md?`<div style="font-size:60px;line-height:1.1">${md}</div>`:''}
+     <div class="muted" style="font-size:19px;margin-bottom:8px">${ni>-1?`Nog <b>${g.m[ni]-score}</b> erbij voor ${MEDALS[ni]}`:'Goud! Kan je je eigen record nog verbreken?'}</div>
+     ${rec&&prev?`<div class="newrec">🏆 NIEUW RECORD! (vorige: ${prev})</div>`:`<div class="muted" style="font-size:19px">Jouw record: <b>${Math.max(prev,score)}</b></div>`}
+     <div style="font-size:19px;margin-top:14px">⏰ De speeltijd is om. ${p.tickets?'':'Oefen verder om een nieuw ticket te verdienen!'}</div>
+   </div>
+   <div class="grid2" style="margin-top:16px">
+     <button class="btn big yellow" data-a="menu">🚀 Verder oefenen</button>
+     ${p.tickets?`<button class="btn big coral" data-a="catch">🎟️ Nog een ticket gebruiken</button>`:''}
+   </div>`;
+  show('s-result');
+  if((rec&&prev)||md==='🥇'){sFan();confetti()}
+}
+
+/* ---------- Robbie's werkplaats ---------- */
+function renderShop(msg){
+  const p=P(), c=coins(p), same=$('#s-shop').classList.contains('on'), y=window.scrollY;
+  $('#s-shop').innerHTML=`
+   <div class="topbar"><button class="btn ghost" data-a="menu">← Terug</button><div class="who" style="font-size:22px">🔧 Werkplaats</div><div class="grow"></div>
+     <div class="who" style="font-size:24px">⭐ ${c}</div></div>
+   <div class="card">
+     <div class="row nowrap" style="margin-bottom:16px"><div>${robbie(msg?'wow':'happy',120,msg?'bounce':'')}</div>
+       <div class="bubble grow">${msg||'Bouw mij om met de sterren die je verdient door te oefenen!'}</div></div>
+     ${Object.entries(SHOP).map(([cat,g])=>`<div class="lbl">${g.t}</div><div class="shop">${g.items.map(it=>{
+        const own=it.p===0||p.owned.includes(cat+':'+it.id), sel=p.look[cat]===it.id;
+        const pv=cat==='color'?`<span class="sw" style="background:${it.c[1]};border-color:${it.c[2]}"></span>`:(it.e||'🚫');
+        return `<button class="shopi ${sel?'sel':''} ${!own&&c<it.p?'poor':''}" data-a="shopi" data-c="${cat}" data-id="${it.id}"><div class="pv">${pv}</div>${it.n}<br>${sel?'✓ aan':own?'kies':it.p+' ⭐'}</button>`}).join('')}</div>`).join('')}
+   </div>`;
+  show('s-shop'); if(same) window.scrollTo(0,y);
+}
+function shopClick(cat,id){
+  const p=P(), it=shopItem(cat,id), c=coins(p), own=it.p===0||p.owned.includes(cat+':'+id);
+  if(own){p.look[cat]=id;save();renderShop('Staat me goed, hè?');return}
+  if(c<it.p){renderShop(`Nog ${it.p-c} ⭐ sparen voor ${cat==='color'?'de kleur '+it.n:it.e+' '+it.n}. Oefenen maar!`);return}
+  confirmModal(`${cat==='color'?'Kleur '+it.n:it.e+' '+it.n} kopen voor ${it.p} ⭐?`,()=>{
+    p.spent+=it.p;p.owned.push(cat+':'+id);p.look[cat]=id;save();sFan();renderShop('Wauw, dank je wel! 🎉')},'Ja, kopen','teal');
+}
+
+/* ---------- Snelheidskaart ---------- */
+let mapOp='m';
+function renderMap(){
+  const p=P();
+  let g='<div></div>'+Array.from({length:10},(_,i)=>`<div class="h">${i+1}</div>`).join('')+'<div></div>';
+  for(let t=1;t<=10;t++){
+    g+=`<div class="rh">tafel ${t}</div>`;
+    for(let n=1;n<=10;n++){const lv=factLevel(p.facts[fkey(mapOp,t,n)]);
+      g+=`<div class="cell ${lv==='new'?'':lv}" title="${mapOp==='m'?n+' × '+t:(n*t)+' : '+t}">${mapOp==='m'?n+'×'+t:(n*t)+':'+t}</div>`}
+    g+=`<div style="font-size:20px;text-align:center">${isBoltTable(p,mapOp,t)?'⚡':''}</div>`;
+  }
+  $('#s-map').innerHTML=`
+   <div class="topbar"><button class="btn ghost" data-a="menu">← Terug</button><div class="who" style="font-size:22px">⚡ Snelheidskaart van ${esc(p.name)}</div></div>
+   <div class="card">
+     <div class="seg" style="max-width:320px;margin-bottom:14px">
+       <button class="${mapOp==='m'?'on':''}" data-a="mapop" data-v="m">× maal</button><button class="${mapOp==='d'?'on':''}" data-a="mapop" data-v="d">: delen</button></div>
+     <div class="map">${g}</div>
+     <div class="legend">
+       <span><i style="background:var(--green)"></i>bliksemsnel (onder 3 s)</span>
+       <span><i style="background:#b6e86a"></i>goed</span>
+       <span><i style="background:var(--orange)"></i>nog wat traag</span>
+       <span><i style="background:var(--coral)"></i>laatste keer fout</span>
+       <span><i style="background:#eef0fb"></i>nog niet geoefend</span></div>
+     <p class="muted" style="font-size:16px;margin:12px 0 0">Maak een hele rij groen en je krijgt een ⚡ bliksemtafel!</p>
+   </div>`;
+  show('s-map');
+}
+
+/* ---------- Overzicht leerkracht ---------- */
+function renderOverview(cloud){
+  const ps=cloud||store.order.map(id=>ensure(store.players[id])).filter(Boolean);
+  const last=p=>{const ks=Object.keys(p.days).sort();if(!ks.length)return '–';const [y,m,d]=ks[ks.length-1].split('-');return `${+d}/${+m}`};
+  const fastN=p=>Object.values(p.facts).filter(f=>factLevel(f)==='fast').length;
+  $('#s-overview').innerHTML=`
+   <div class="topbar"><button class="btn ghost" data-a="players">← Terug</button><div class="who" style="font-size:22px">👩‍🏫 Overzicht</div></div>
+   <div class="card" style="overflow-x:auto">
+    <table class="ov"><tr><th>Leerling</th><th>🔥 Op rij</th><th>Rondes (7 dagen)</th><th>⚡ Bliksemsommen</th><th>⚡ Tafels</th><th>🎓 Maal</th><th>🎓 Deel</th><th>Laatst</th>${cloud?'<th>Prentjescode</th>':''}</tr>
+    ${ps.map(p=>`<tr><td>${p.avatar} ${esc(p.name)}</td><td>${streak(p)}</td><td>${weekRounds(p)}</td><td>${fastN(p)}</td><td>${boltCount(p)}</td><td>${Object.keys(p.diplomas).filter(k=>k[0]==='m').length}</td><td>${Object.keys(p.diplomas).filter(k=>k[0]==='d').length}</td><td>${last(p)}</td>${cloud?`<td>${p._code?`<button class="btn small" data-a="kreset" data-id="${p.id}">🔑 wissen</button>`:'<span class="muted">nog geen</span>'}</td>`:''}</tr>`).join('')}
+    </table>
+    <p class="muted" style="font-size:15px;margin-bottom:0">Bliksemsom = de laatste keren juist én gemiddeld sneller dan 3 seconden. ${cloud?'Code vergeten? Wis ze hier: het kind kiest dan een nieuwe en de voortgang blijft. Leerlingen toevoegen doe je in Robbie in Robotland.':'Gegevens staan alleen op dit toestel.'}</p>
+   </div>`;
+  show('s-overview');
+}
+
+/* ---------- Acties ---------- */
+const A={
+  pick:el=>{if(managing)return;store.current=el.dataset.id;save();renderMenu()},
+  del:el=>{const p=store.players[el.dataset.id];confirmModal(`${p.avatar} ${esc(p.name)} wissen?`,()=>{delete store.players[p.id];store.order=store.order.filter(i=>i!==p.id);if(store.current===p.id)store.current=null;save();renderPlayers()})},
+  newPlayer:()=>newPlayerModal(),
+  manage:()=>{managing=!managing;renderPlayers()},
+  overview:()=>renderOverview(),
+  players:()=>{managing=false; if(SYNC&&sess){pushNow();sess=null} renderPlayers()},
+  kcode:()=>{const c=normCode(($('#kc')||{}).value); if(c.length<4){$('#kc').style.borderColor='var(--coral)';return} store.klascode=c; save(); renderKlas()},
+  kother:()=>{store.klascode=''; save(); renderCodeAsk()},
+  kpick:el=>klasPick(el.dataset.id),
+  kteacher:()=>loadOverview(),
+  kreset:el=>{const id=el.dataset.id, l=klas&&klas.leerlingen.find(x=>x.id===id);
+    confirmModal(`Prentjescode van ${l?esc(l.naam):'deze leerling'} wissen?`,async()=>{
+      try{await rpc('mt_code_wissen',{p_leerling:id},teacherTok)}catch(e){}
+      loadOverview()})},
+  closeOv:()=>$('#ov').classList.remove('on'),
+  sound:()=>{store.sound=!store.sound;save();renderMenu()},
+  tbl:el=>{const p=P(),t=+el.dataset.t;if(p.tables.includes(t)){if(p.tables.length>1)p.tables=p.tables.filter(x=>x!==t)}else p.tables.push(t);save();renderMenu()},
+  preset:el=>{P().tables=el.dataset.v.split(',').map(Number);save();renderMenu()},
+  op:el=>{P().op=el.dataset.v;save();renderMenu()},
+  dur:el=>{P().dur=+el.dataset.v;save();renderMenu()},
+  race:()=>startGame('race'),
+  duel:()=>startDuel(),
+  gates:()=>startGates(),
+  practice:()=>startGame('practice'),
+  menu:()=>renderMenu(),
+  map:()=>{mapOp=P().op==='d'?'d':'m';renderMap()},
+  mapop:el=>{mapOp=el.dataset.v;renderMap()},
+  quit:()=>quitGame(),
+  catch:()=>renderArcade(),
+  play:el=>startArcade(el.dataset.g),
+  catchQuit:()=>{if(C){cancelAnimationFrame(C.raf);C=null}renderMenu()},
+  shop:()=>renderShop(),
+  shopi:el=>shopClick(el.dataset.c,el.dataset.id),
+  boss:el=>{const p=P(),t=+el.dataset.t,op=el.dataset.o==='d'?'d':'m';
+    if(p.diplomas[op+t]||bossIsOpen(p,op,t)) startBoss(t,op);
+    else{const m=$('#bossmsg');if(m)m.innerHTML=op==='d'
+      ?`🔒 Kies bovenaan <b>: delen</b> en maak alle deelsommen van <b>tafel ${t}</b> groen. Dan durft Bugbot!`
+      :`🔒 Maak eerst alle maalsommen van <b>tafel ${t}</b> groen op je snelheidskaart. Dan durft Bugbot!`}},
+  tip:el=>{document.querySelectorAll('.badge.tip').forEach(b=>b!==el&&b.classList.remove('tip'));el.classList.toggle('tip')}
+};
+document.addEventListener('click',e=>{
+  const el=e.target.closest('[data-a]'); if(!el) return;
+  if(el.dataset.a==='del') e.stopPropagation();
+  const f=A[el.dataset.a]; if(f) f(el);
+});
+document.addEventListener('keydown',e=>{ if(C){if(e.key==='ArrowLeft')C.dir=-1;else if(e.key==='ArrowRight')C.dir=1} });
+document.addEventListener('keyup',e=>{ if(C&&(e.key==='ArrowLeft'||e.key==='ArrowRight'))C.dir=0 });
+document.addEventListener('keydown',e=>{
+  if(!G||!$('#s-game').classList.contains('on')) return;
+  if(/^[0-9]$/.test(e.key)) press(e.key);
+  else if(e.key==='Backspace') press('bs');
+  else if(e.key==='Enter') press('ok');
+});
+
+/* ---------- Start ---------- */
+if(!SYNC&&store.current&&store.players[store.current]) renderMenu(); else renderPlayers();
+</script>
+</body>
+</html>

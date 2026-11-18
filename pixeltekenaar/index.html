@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A5 · Robbie's pixeltekenaar</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&display=swap">
+<style>
+:root{--blauw:#5BB5D8;--rood:#C8282D;--geel:#F4C430;--groen:#5DBB46;--inkt:#2F3A45;--licht:#EEF1F5;--lichtblauw:#E3F3FA;--lichtgeel:#FFF6D6;--cel:48px}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:Nunito,system-ui,sans-serif;color:var(--inkt);background:var(--lichtblauw);-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;padding:0}
+button:focus-visible{outline:4px solid var(--inkt);outline-offset:3px}
+#app{min-height:100%;display:flex;flex-direction:column;max-width:1200px;margin:0 auto;padding:10px 14px 14px}
+.top{display:flex;align-items:center;gap:10px;height:64px;flex:none}
+.top .sp{flex:1}
+.rond{width:54px;height:54px;border-radius:50%;background:#fff;border:3px solid var(--inkt);display:grid;place-items:center;flex:none}
+.rond svg{width:28px;height:28px}
+.dots{display:flex;gap:8px}
+.dot{width:20px;height:20px;border-radius:50%;border:3px solid var(--inkt);background:#fff}
+.dot.vol{background:var(--geel)}
+.robbie{display:block;height:auto}
+.robbie.mini{width:44px}
+.robbie.groot{width:clamp(100px,18vw,160px)}
+.robbie.blij{animation:dans .5s ease-in-out 4 alternate}
+.robbie.oei{animation:schud .35s ease-in-out 2}
+@keyframes dans{from{transform:translateY(0) rotate(-5deg)}to{transform:translateY(-8px) rotate(5deg)}}
+@keyframes schud{0%,100%{transform:translateX(0)}25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
+@keyframes plop{from{transform:scale(.4)}70%{transform:scale(1.15)}to{transform:scale(1)}}
+.werk{flex:1;display:flex;align-items:center;justify-content:center;gap:18px;padding:6px 0;min-height:0}
+.bord{display:flex;flex-direction:column;gap:3px;background:#fff;border:3px solid var(--inkt);border-radius:18px;padding:8px 8px 8px 4px}
+.bord.verf .cellen{touch-action:none;cursor:pointer}
+.rij{display:flex;align-items:center;gap:6px;padding:2px 4px;border-radius:12px}
+.rij.sel{background:var(--lichtgeel);box-shadow:0 0 0 3px var(--geel)}
+.mark{width:calc(var(--cel)*.3);height:calc(var(--cel)*.3);border-radius:50%;flex:none}
+.mark.fout{background:var(--rood);border:2px solid var(--inkt);animation:plop .3s ease-out}
+.cellen{display:flex;gap:3px}
+.cel{width:var(--cel);height:var(--cel);border:2px solid #9AA3B2;border-radius:6px;background:#fff;flex:none}
+.cel.open{background:var(--licht);border-style:dashed}
+.code{display:flex;gap:4px;align-items:center;min-height:calc(var(--cel)*.9);min-width:calc(var(--cel)*1.4);padding:2px 4px 2px 8px;border-left:3px solid var(--licht);overflow-x:auto}
+.code.leeg::after{content:"";width:calc(var(--cel)*1.1);height:calc(var(--cel)*.8);border:3px dashed #9AA3B2;border-radius:10px}
+.chip{display:flex;align-items:center;gap:calc(var(--cel)*.08);height:calc(var(--cel)*.86);padding:0 calc(var(--cel)*.12);border:2px solid var(--inkt);border-radius:10px;background:#fff;font-weight:800;font-size:calc(var(--cel)*.52);line-height:1;flex:none}
+.chip .sw{width:calc(var(--cel)*.44);height:calc(var(--cel)*.44);border-radius:5px;border:2px solid var(--inkt)}
+.chip.nieuw{animation:plop .25s ease-out}
+.voorbeeld{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px;background:#fff;border:3px solid var(--inkt);border-radius:18px}
+.voorbeeld svg{width:36px;height:36px}
+.mg{display:grid;gap:1px;background:#9AA3B2;border:2px solid var(--inkt)}
+.mg i{display:block}
+.onder{display:flex;flex-wrap:wrap;gap:12px 22px;align-items:center;justify-content:center;flex:none;padding-top:6px}
+.groep{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center}
+.kl{width:58px;height:58px;border-radius:50%;border:3px solid var(--inkt);flex:none;transition:transform .1s}
+.kl.aan{box-shadow:0 0 0 4px #fff,0 0 0 8px var(--inkt);transform:scale(1.06)}
+.getal{width:54px;height:54px;border-radius:16px;border:3px solid var(--inkt);font-size:30px;font-weight:800;flex:none}
+.getal:active,.kl:active,.groot:active{transform:scale(.92)}
+.schud{animation:schud .35s ease-in-out 2}
+.groot{min-width:76px;height:76px;padding:0 20px;border-radius:24px;border:3px solid var(--inkt);background:var(--groen);display:grid;place-items:center;flex:none}
+.groot svg{width:42px;height:42px}
+.groot.wit{background:#fff}
+.groot.geel{background:var(--geel)}
+.groot.klein{min-width:62px;height:62px;padding:0 14px;border-radius:20px}
+.groot.klein svg{width:32px;height:32px}
+.scene{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+.titel{font-size:clamp(26px,5vw,40px);font-weight:800;margin:0;text-align:center}
+.menu{display:grid;gap:14px;width:100%;max-width:820px}
+.regel{display:flex;align-items:center;gap:14px;padding:12px 16px;background:#fff;border:3px solid var(--inkt);border-radius:26px}
+.regel.vrij{background:var(--lichtgeel);width:100%}
+.icoon{display:flex;align-items:center;gap:6px;flex:none;min-width:170px}
+.icoon svg.p{width:30px;height:30px}
+.niv{display:flex;align-items:center;gap:8px;padding:8px 12px;border:3px solid var(--inkt);border-radius:18px;background:var(--lichtblauw)}
+.niv .nr{font-size:26px;font-weight:800;width:28px;text-align:center}
+.niv svg.st{width:30px;height:30px}
+.niveaus{display:flex;gap:10px;flex-wrap:wrap;flex:1}
+.ster{width:min(30vw,150px);height:auto;animation:plop .4s ease-out}
+.paneel{position:fixed;inset:0;background:rgba(47,58,69,.55);display:grid;place-items:center;padding:16px;z-index:5}
+.paneel>div{background:#fff;border:3px solid var(--inkt);border-radius:24px;max-width:660px;max-height:90vh;overflow:auto;padding:22px 24px;user-select:text;-webkit-user-select:text;font-weight:600;line-height:1.45}
+.paneel h2{margin:0 0 8px;font-size:24px}
+.paneel h3{margin:16px 0 4px;font-size:17px}
+.paneel p,.paneel ul{margin:0 0 6px}
+.paneel ul{padding-left:20px}
+.paneel .sluit{margin-top:14px;padding:10px 22px;border:3px solid var(--inkt);border-radius:14px;background:var(--geel);font-weight:800}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="live" class="sr" aria-live="polite"></div>
+<script>
+(function(){
+"use strict";
+var KL={w:{h:"#FFFFFF",n:"wit"},r:{h:"#C8282D",n:"rood"},b:{h:"#5BB5D8",n:"blauw"},g:{h:"#F4C430",n:"geel"},n:{h:"#5DBB46",n:"groen"},z:{h:"#2F3A45",n:"zwart"}};
+var PAL=["r","b","g","n","z","w"];
+var DONKER={r:1,n:1,z:1};
+var GETAL=["nul","één","twee","drie","vier","vijf","zes","zeven","acht"];
+function P(naam,rijen){return {naam:naam,rijen:rijen.map(function(s){return s.replace(/\./g,"w").split("");})};}
+var NIV=[
+ {size:5,pics:[
+  P("een hart",[".r.r.","rrrrr","rrrrr",".rrr.","..r.."]),
+  P("een kruis",["..b..","..b..","bbbbb","..b..","..b.."]),
+  P("een trap",["g....","gg...","ggg..","gggg.","ggggg"])]},
+ {size:6,pics:[
+  P("een huis",["..rr..",".rrrr.","rrrrrr",".bbbb.",".bgbb.",".bgbb."]),
+  P("een ijsje",["..rr..",".rrrr.",".rrrr.",".gggg.","..gg..","..gg.."]),
+  P("een boom",["..nn..",".nnnn.","nnnnnn",".nnnn.","..zz..","..zz.."])]},
+ {size:8,pics:[
+  P("Robbie",["...rr...","...zz...","bbbbbbbb","bgbbbbgb","bbbbbbbb","bbzzzzbb","bbbbbbbb",".z....z."]),
+  P("een paddenstoel",["..rrrr..",".rr.rrr.","rrrrr.rr","r.rrrrrr","..gggg..","..gggg..","..gggg..","nnnnnnnn"]),
+  P("een vis",["........","..ggg..g",".gggg.gg","gzggggg.",".gggg.gg","..ggg..g","n......n","nn....nn"])]}
+];
+var app=document.getElementById("app"), live=document.getElementById("live");
+
+/* ---------- hulpjes ---------- */
+function codeVan(rij){var o=[];rij.forEach(function(c){var l=o[o.length-1];if(l&&l.c===c)l.n++;else o.push({n:1,c:c});});return o;}
+function uit(codes){var r=[];codes.forEach(function(k){for(var i=0;i<k.n;i++)r.push(k.c);});return r;}
+function som(codes){var s=0;codes.forEach(function(k){s+=k.n;});return s;}
+function gelijk(a,b){if(a.length!==b.length)return false;for(var i=0;i<a.length;i++)if(a[i]!==b[i])return false;return true;}
+function leegRaster(n){var g=[];for(var i=0;i<n;i++){var r=[];for(var j=0;j<n;j++)r.push("w");g.push(r);}return g;}
+function schud(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function zegChip(k){return GETAL[k.n]+" "+KL[k.c].n;}
+
+/* ---------- tekeningen ---------- */
+function robbie(mood,cls){
+  var mond=mood==="blij"?'<path d="M72 92 Q100 118 128 92" fill="#fff" stroke="#2F3A45" stroke-width="5" stroke-linejoin="round"/>':
+    mood==="oei"?'<ellipse cx="100" cy="98" rx="11" ry="13" fill="#2F3A45"/>':'<path d="M78 96 H122" stroke="#2F3A45" stroke-width="6" stroke-linecap="round"/>';
+  var oy=mood==="oei"?64:70, ox=mood==="oei"?0:3;
+  return '<svg class="robbie '+(cls||"")+' '+(mood||"")+'" viewBox="0 0 200 250" role="img" aria-label="Robbie Robot">'+
+  '<line x1="100" y1="30" x2="100" y2="12" stroke="#2F3A45" stroke-width="5"/><circle cx="100" cy="10" r="9" fill="#C8282D" stroke="#2F3A45" stroke-width="4"/>'+
+  '<rect x="22" y="62" width="18" height="34" rx="8" fill="#F4C430" stroke="#2F3A45" stroke-width="4"/><rect x="160" y="62" width="18" height="34" rx="8" fill="#F4C430" stroke="#2F3A45" stroke-width="4"/>'+
+  '<rect x="38" y="30" width="124" height="100" rx="26" fill="#5BB5D8" stroke="#2F3A45" stroke-width="5"/>'+
+  '<circle cx="76" cy="68" r="15" fill="#fff" stroke="#2F3A45" stroke-width="4"/><circle cx="124" cy="68" r="15" fill="#fff" stroke="#2F3A45" stroke-width="4"/>'+
+  '<circle cx="'+(76+ox)+'" cy="'+oy+'" r="6" fill="#2F3A45"/><circle cx="'+(124+ox)+'" cy="'+oy+'" r="6" fill="#2F3A45"/>'+mond+
+  '<rect x="24" y="150" width="22" height="56" rx="11" fill="#5BB5D8" stroke="#2F3A45" stroke-width="4"/><rect x="154" y="150" width="22" height="56" rx="11" fill="#5BB5D8" stroke="#2F3A45" stroke-width="4"/>'+
+  '<rect x="50" y="138" width="100" height="84" rx="20" fill="#5BB5D8" stroke="#2F3A45" stroke-width="5"/>'+
+  '<circle cx="80" cy="196" r="8" fill="#5DBB46" stroke="#2F3A45" stroke-width="3"/><circle cx="100" cy="196" r="8" fill="#F4C430" stroke="#2F3A45" stroke-width="3"/><circle cx="120" cy="196" r="8" fill="#C8282D" stroke="#2F3A45" stroke-width="3"/>'+
+  '<rect x="64" y="222" width="24" height="22" rx="8" fill="#2F3A45"/><rect x="112" y="222" width="24" height="22" rx="8" fill="#2F3A45"/></svg>';
+}
+function sv(p,cls){return '<svg class="'+(cls||"")+'" viewBox="0 0 24 24" fill="none" stroke="#2F3A45" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+p+'</svg>';}
+var I={
+ huis:sv('<path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/>'),
+ geluid:sv('<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9a4 4 0 0 1 0 6"/><path d="M19.5 6.5a8 8 0 0 1 0 11"/>'),
+ info:sv('<circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><path d="M12 7.5v.1"/>'),
+ pijl:sv('<path d="M4 12h15"/><path d="M13 5l7 7-7 7"/>'),
+ pijlp:sv('<path d="M4 12h15"/><path d="M13 5l7 7-7 7"/>',"p"),
+ vink:sv('<path d="M4 13l5 5L20 6"/>'),
+ terug:sv('<path d="M9 7l-5 5 5 5"/><path d="M4 12h10a6 6 0 0 1 0 12"/>'),
+ wis:sv('<path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/>'),
+ oog:sv('<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'),
+ potlood:sv('<path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M14 6l3 3"/>',"p"),
+ duo:sv('<circle cx="8" cy="8" r="3"/><circle cx="17" cy="8" r="3"/><path d="M2 20c0-3 3-5 6-5s6 2 6 5"/><path d="M15 15c3 0 7 1 7 5"/>'),
+ opnieuw:sv('<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/>')
+};
+function ster(vol,cls){return '<svg class="'+(cls||"")+'" viewBox="0 0 100 100" aria-hidden="true"><path d="M50 6l13 27 30 4-22 21 5 30-26-14-26 14 5-30L7 37l30-4z" fill="'+(vol?"#F4C430":"#fff")+'" stroke="#2F3A45" stroke-width="5" stroke-linejoin="round"/></svg>';}
+function miniGrid(rijen,px){
+  var n=rijen.length,h='<div class="mg" style="grid-template-columns:repeat('+n+','+px+'px)">';
+  rijen.forEach(function(r){r.forEach(function(c){h+='<i style="width:'+px+'px;height:'+px+'px;background:'+KL[c].h+'"></i>';});});
+  return h+'</div>';
+}
+function chip(k,extra,attr){return '<button class="chip '+(extra||"")+'" data-a="zeg" data-n="'+k.n+'" data-c="'+k.c+'" '+(attr||"")+' aria-label="'+zegChip(k)+'"><span>'+k.n+'</span><span class="sw" style="background:'+KL[k.c].h+'"></span></button>';}
+
+/* ---------- stem en geluid ---------- */
+var laatste="", ac=null;
+function praat(t){
+  laatste=t; live.textContent=t;
+  try{var ss=window.speechSynthesis;if(!ss)return;ss.cancel();
+    var u=new SpeechSynthesisUtterance(t),vs=ss.getVoices()||[];
+    var v=vs.filter(function(x){return /^nl[-_]BE/i.test(x.lang);})[0]||vs.filter(function(x){return /^nl/i.test(x.lang);})[0];
+    if(v)u.voice=v;u.lang=v?v.lang:"nl-BE";u.rate=.9;u.pitch=1.15;ss.speak(u);}catch(e){}
+}
+function toon(f,d){try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();if(ac.state==="suspended")ac.resume();var t=ac.currentTime;
+  f.forEach(function(q,i){var o=ac.createOscillator(),g=ac.createGain();o.type="triangle";o.frequency.value=q;g.gain.setValueAtTime(0,t+i*d);g.gain.linearRampToValueAtTime(.16,t+i*d+.02);g.gain.exponentialRampToValueAtTime(.001,t+(i+1)*d);o.connect(g);g.connect(ac.destination);o.start(t+i*d);o.stop(t+(i+1)*d+.02);});}catch(e){}}
+var G={goed:function(){toon([660,880],.1);},fout:function(){toon([220,180],.15);},klaar:function(){toon([523,659,784,1047],.14);},tik:function(){toon([520],.06);}};
+
+/* ---------- bewaren ---------- */
+var sterren={teken:[0,0,0],code:[0,0,0]};
+try{var b=JSON.parse(localStorage.getItem("a5-pixels")||"null");if(b&&b.teken&&b.code)sterren=b;}catch(e){}
+function bewaar(){try{localStorage.setItem("a5-pixels",JSON.stringify(sterren));}catch(e){}}
+
+/* ---------- toestand ---------- */
+var st={scherm:"home",modus:"niv",niveau:0,ronde:0,volg:[0,1,2],pic:null,size:5,grid:null,codes:null,kleur:"r",sel:0,fout:[],klaar:false,mood:"",nieuw:-1};
+
+function celMaat(chips,metVoorbeeld,onderH){
+  var W=Math.min(window.innerWidth,1200)-40, H=window.innerHeight-64-onderH-50, n=st.size;
+  var fW=(n+.3)*1+n*3/48+chips*1.25+.9+(metVoorbeeld?n*.42+1.2:0);
+  var c=Math.min((H-n*7-20)/n, W/fW, 66);
+  return Math.max(22,Math.floor(c));
+}
+
+/* ---------- schermen ---------- */
+function kop(){
+  var h='<div class="top">';
+  if(st.scherm!=="home") h+='<button class="rond" data-a="home" aria-label="Naar het begin">'+I.huis+'</button>';
+  if(st.modus==="niv"&&(st.scherm==="teken"||st.scherm==="code")){h+='<div class="dots">';for(var i=0;i<3;i++)h+='<div class="dot '+(i<st.ronde||(i===st.ronde&&st.klaar)?"vol":"")+'"></div>';h+='</div>';}
+  h+='<div class="sp"></div>';
+  if(st.scherm!=="home"&&st.scherm!=="ster") h+=robbie(st.mood,"mini");
+  h+='<button class="rond" data-a="herhaal" aria-label="Zeg het nog eens">'+I.geluid+'</button>';
+  if(st.scherm==="home") h+='<button class="rond" data-a="info" aria-label="Info voor de leerkracht">'+I.info+'</button>';
+  return h+'</div>';
+}
+function bord(o){
+  var h='<div class="bord '+(o.verf?"verf":"")+'" style="--cel:'+o.cel+'px">';
+  for(var r=0;r<st.size;r++){
+    h+='<div class="rij '+(o.sel===r?"sel":"")+'" data-r="'+r+'"><div class="mark '+(st.fout.indexOf(r)>=0?"fout":"")+'"></div><div class="cellen">';
+    var vul=o.live?uit(st.codes[r]):st.grid[r];
+    for(var c=0;c<st.size;c++){var k=vul[c];h+='<div class="cel'+(k?"":" open")+'" data-r="'+r+'" data-c="'+c+'"'+(k?' style="background:'+KL[k].h+'"':'')+'></div>';}
+    h+='</div>';
+    if(o.code){
+      var cs=st.codes[r];
+      h+='<div class="code'+(cs.length?"":" leeg")+'" data-a="kiesrij" data-r="'+r+'">';
+      cs.forEach(function(k,i){h+=chip(k,(o.live&&r===st.sel&&i===cs.length-1&&st.nieuw===r)?"nieuw":"");});
+      h+='</div>';
+    }
+    h+='</div>';
+  }
+  return h+'</div>';
+}
+function palet(){var h='<div class="groep" role="group" aria-label="Kleuren">';PAL.forEach(function(c){h+='<button class="kl '+(st.kleur===c?"aan":"")+'" data-a="kleur" data-c="'+c+'" style="background:'+KL[c].h+'" aria-label="'+KL[c].n+'"></button>';});return h+'</div>';}
+function getallen(){
+  var h='<div class="groep" id="getallen" role="group" aria-label="Hoeveel vakjes">',bg=KL[st.kleur].h,fg=DONKER[st.kleur]?"#fff":"#2F3A45";
+  for(var i=1;i<=st.size;i++)h+='<button class="getal" data-a="getal" data-n="'+i+'" style="background:'+bg+';color:'+fg+'" aria-label="'+GETAL[i]+" "+KL[st.kleur].n+'">'+i+'</button>';
+  return h+'</div>';
+}
+function maxChips(){var m=0;st.pic.rijen.forEach(function(r){m=Math.max(m,codeVan(r).length);});if(st.codes)st.codes.forEach(function(c){m=Math.max(m,c.length);});return m;}
+
+function teken(){
+  var h="";
+  if(st.scherm==="home"){
+    h=kop()+'<div class="scene">'+robbie("blij","groot")+'<h1 class="titel">Robbie\'s pixeltekenaar</h1><div class="menu">';
+    [["teken",'Teken wat de code zegt'],["code",'Schrijf de code bij de tekening']].forEach(function(m){
+      var ic=m[0]==="teken"?chip({n:3,c:"r"},"","tabindex=-1 style=\"--cel:40px;pointer-events:none\"")+I.pijlp+miniGrid(NIV[0].pics[0].rijen,7):miniGrid(NIV[0].pics[0].rijen,7)+I.pijlp+chip({n:3,c:"r"},"","tabindex=-1 style=\"--cel:40px;pointer-events:none\"");
+      h+='<div class="regel"><div class="icoon" aria-hidden="true">'+ic+'</div><div class="niveaus">';
+      for(var n=0;n<3;n++)h+='<button class="niv" data-a="start" data-m="'+m[0]+'" data-n="'+n+'" aria-label="'+m[1]+', niveau '+(n+1)+'"><span class="nr">'+(n+1)+'</span>'+miniGrid(NIV[n].pics[0].rijen,n===2?4:n===1?5:6)+ster(sterren[m[0]][n],"st")+'</button>';
+      h+='</div></div>';
+    });
+    h+='<button class="regel vrij" data-a="vrij" aria-label="Zelf tekenen en de code schrijven"><div class="icoon" aria-hidden="true">'+I.potlood+miniGrid(leegRaster(5).map(function(r,i){return r.map(function(c,j){return (i+j)%3===0?"b":c;});}),7)+I.pijlp+chip({n:2,c:"b"},"","tabindex=-1 style=\"--cel:40px;pointer-events:none\"")+'</div><div class="niveaus" style="align-items:center">'+I.duo.replace('<svg','<svg width="40" height="40"')+'</div></button>';
+    h+='</div></div>';
+  }
+  else if(st.scherm==="teken"){
+    var cel=celMaat(maxChips(),false,96);
+    h=kop()+'<div class="werk">'+bord({cel:cel,verf:!st.klaar,code:true})+'</div><div class="onder">';
+    if(st.klaar){
+      if(st.modus==="door") h+='<button class="groot wit" data-a="home" aria-label="Naar het begin">'+I.huis+'</button><button class="groot geel" data-a="vrij" aria-label="Nog een tekening maken">'+I.opnieuw+'</button>';
+      else h+='<button class="groot" data-a="volgende" aria-label="Verder">'+I.pijl+'</button>';
+    } else h+=palet()+'<div class="groep"><button class="groot" data-a="check" aria-label="Klaar, laat Robbie kijken">'+I.vink+'</button></div>';
+    h+='</div>';
+  }
+  else if(st.scherm==="code"){
+    var cel2=celMaat(Math.max(maxChips()+1,3),true,st.size>6?180:150);
+    h=kop()+'<div class="werk"><div class="voorbeeld" aria-label="De tekening">'+I.oog+miniGrid(st.pic.rijen,Math.max(8,Math.round(cel2*.42)))+'</div>'+bord({cel:cel2,live:true,code:true,sel:st.klaar?-1:st.sel})+'</div><div class="onder">';
+    if(st.klaar){
+      if(st.modus==="vrij") h+='<button class="groot wit" data-a="home" aria-label="Naar het begin">'+I.huis+'</button><button class="groot geel" data-a="doorgeef" aria-label="Geef de code door aan een vriend">'+I.duo+'</button>';
+      else h+='<button class="groot" data-a="volgende" aria-label="Verder">'+I.pijl+'</button>';
+    } else h+=palet()+getallen()+'<div class="groep"><button class="groot klein wit" data-a="terug" aria-label="Laatste stukje code weg">'+I.terug+'</button><button class="groot" data-a="check" aria-label="Klaar, laat Robbie kijken">'+I.vink+'</button></div>';
+    h+='</div>';
+  }
+  else if(st.scherm==="vrij"){
+    var cel3=celMaat(0,false,96);
+    h=kop()+'<div class="werk">'+bord({cel:cel3,verf:true,code:false})+'</div><div class="onder">'+palet()+'<div class="groep"><button class="groot klein wit" data-a="wisalles" aria-label="Alles wissen">'+I.wis+'</button><button class="groot" data-a="vrijverder" aria-label="Nu de code schrijven">'+I.pijl+'</button></div></div>';
+  }
+  else if(st.scherm==="ster"){
+    h=kop()+'<div class="scene">'+robbie("blij","groot")+ster(true,"ster")+'<div class="groep"><button class="groot wit" data-a="home" aria-label="Naar het begin">'+I.huis+'</button>'+(st.niveau<2?'<button class="groot" data-a="start" data-m="'+st.scherm2+'" data-n="'+(st.niveau+1)+'" aria-label="Volgend niveau">'+I.pijl+'</button>':'')+'</div></div>';
+  }
+  app.innerHTML=h; st.nieuw=-1;
+  var bd=app.querySelector(".bord.verf"); if(bd) koppelVerf(bd);
+}
+
+/* ---------- verven met vinger of muis ---------- */
+var verft=false, verfKleur="r";
+function verfCel(el){
+  if(!el||!el.classList.contains("cel"))return;
+  var r=+el.dataset.r,c=+el.dataset.c;
+  if(st.grid[r][c]===verfKleur)return;
+  st.grid[r][c]=verfKleur; el.style.background=KL[verfKleur].h;
+  var m=el.parentNode.parentNode.querySelector(".mark.fout"); if(m){m.classList.remove("fout");st.fout=st.fout.filter(function(x){return x!==r;});}
+}
+function koppelVerf(bd){
+  bd.addEventListener("pointerdown",function(e){
+    var el=e.target.closest(".cel"); if(!el)return;
+    e.preventDefault(); verft=true;
+    var cur=st.grid[+el.dataset.r][+el.dataset.c];
+    verfKleur=(cur===st.kleur&&st.kleur!=="w")?"w":st.kleur;
+    G.tik(); verfCel(el);
+  });
+  bd.addEventListener("pointermove",function(e){if(!verft)return;var el=document.elementFromPoint(e.clientX,e.clientY);if(el&&el.closest)verfCel(el.closest(".cel"));});
+}
+window.addEventListener("pointerup",function(){verft=false;});
+window.addEventListener("pointercancel",function(){verft=false;});
+
+/* ---------- spelverloop ---------- */
+var UIT={
+ teken:"Kijk naar de code naast elke rij. Kies een kleur en kleur zoveel vakjes. Klaar? Tik op het vinkje.",
+ code:"Kijk naar de tekening. Schrijf voor elke rij de code: kies een kleur en tik hoeveel vakjes. Ik teken mee.",
+ vrij:"Maak zelf een tekening. Kies een kleur en tik op de vakjes. Klaar? Tik op de pijl.",
+ vrijcode:"Schrijf nu de code bij jouw tekening. Kies een kleur en tik hoeveel vakjes.",
+ door:"Geef de tablet aan een vriend. Kan jij tekenen wat de code zegt?"
+};
+function start(m,n){st.scherm=m;st.scherm2=m;st.modus="niv";st.niveau=n;st.ronde=0;st.volg=schud([0,1,2]);ronde();teken();praat(UIT[m]);}
+function ronde(){
+  st.pic=NIV[st.niveau].pics[st.volg[st.ronde]];st.size=NIV[st.niveau].size;
+  st.fout=[];st.klaar=false;st.mood="";st.sel=0;st.kleur="r";
+  if(st.scherm==="teken"){st.grid=leegRaster(st.size);st.codes=st.pic.rijen.map(codeVan);}
+  else{st.codes=st.pic.rijen.map(function(){return [];});st.grid=null;}
+}
+function lof(){return ["Knap! De tekening klopt.","Super, dat is "+st.pic.naam+"!","Joepie, jij kan met codes werken!"][Math.floor(Math.random()*3)];}
+function actie(a,el){
+  if(a==="home"){st.scherm="home";st.modus="niv";teken();praat("Kies wat je wil doen.");}
+  else if(a==="herhaal"){praat(laatste||"Dag! Ik ben Robbie. Ik teken met codes. Kies wat je wil doen.");}
+  else if(a==="info"){toonInfo();}
+  else if(a==="start"){G.tik();start(el.dataset.m,+el.dataset.n);}
+  else if(a==="kleur"){st.kleur=el.dataset.c;G.tik();teken();praat(KL[st.kleur].n);}
+  else if(a==="zeg"){praat(zegChip({n:+el.dataset.n,c:el.dataset.c}));if(st.scherm==="code"&&!st.klaar){var rj=el.closest(".code");if(rj){st.sel=+rj.dataset.r;teken();}}}
+  else if(a==="kiesrij"){if(st.scherm==="code"&&!st.klaar){st.sel=+el.dataset.r;G.tik();teken();}}
+  else if(a==="getal"){
+    var n=+el.dataset.n,cs=st.codes[st.sel];
+    if(som(cs)+n>st.size){G.fout();var g=document.getElementById("getallen");if(g){g.classList.remove("schud");void g.offsetWidth;g.classList.add("schud");}praat(som(cs)>=st.size?"Deze rij is al vol. Kies een andere rij.":"Te veel! In deze rij passen nog maar "+GETAL[st.size-som(cs)]+" vakjes.");return;}
+    cs.push({n:n,c:st.kleur});st.nieuw=st.sel;st.fout=st.fout.filter(function(x){return x!==st.sel;});
+    G.goed();praat(zegChip({n:n,c:st.kleur}));
+    if(som(cs)===st.size){for(var i=1;i<=st.size;i++){var k=(st.sel+i)%st.size;if(som(st.codes[k])<st.size){st.sel=k;break;}}}
+    teken();
+  }
+  else if(a==="terug"){
+    if(!st.codes[st.sel].length&&st.sel>0)st.sel--;
+    if(st.codes[st.sel].length){st.codes[st.sel].pop();G.tik();}
+    teken();
+  }
+  else if(a==="check"){
+    var fout=[];
+    for(var r=0;r<st.size;r++){
+      var doel=st.scherm==="teken"?uit(st.codes[r]):st.pic.rijen[r];
+      var is=st.scherm==="teken"?st.grid[r]:uit(st.codes[r]);
+      if(!gelijk(doel,is))fout.push(r);
+    }
+    st.fout=fout;
+    if(!fout.length){
+      st.klaar=true;st.mood="blij";G.klaar();teken();
+      if(st.modus==="vrij")praat("Je code klopt! Geef ze nu door aan een vriend.");
+      else if(st.modus==="door")praat("Joepie! Jouw vriend tekende de tekening na met jouw code.");
+      else praat(lof());
+    } else {
+      st.mood="oei";G.fout();
+      if(st.scherm==="code"){var eerste=fout[0];st.sel=eerste;}
+      teken();
+      praat(fout.length===1?"Bijna! Kijk nog eens naar de rij met het rode bolletje.":"Oei, kijk nog eens naar de rijen met een rood bolletje.");
+    }
+  }
+  else if(a==="volgende"){
+    st.ronde++;
+    if(st.ronde>=3){sterren[st.scherm2][st.niveau]=1;bewaar();st.scherm="ster";G.klaar();teken();praat("Je hebt een ster verdiend!");}
+    else{ronde();teken();praat(st.scherm==="teken"?"Nog een tekening. Wat zegt de code?":"Nog een tekening. Schrijf de code.");}
+  }
+  else if(a==="vrij"){G.tik();st.scherm="vrij";st.modus="vrij";st.size=8;st.grid=leegRaster(8);st.codes=null;st.pic=null;st.fout=[];st.kleur="r";st.mood="";st.klaar=false;teken();praat(UIT.vrij);}
+  else if(a==="wisalles"){st.grid=leegRaster(st.size);G.tik();teken();}
+  else if(a==="vrijverder"){
+    var iets=st.grid.some(function(r){return r.some(function(c){return c!=="w";});});
+    if(!iets){G.fout();praat("Teken eerst iets.");return;}
+    st.pic={naam:"jouw tekening",rijen:st.grid.map(function(r){return r.slice();})};
+    st.scherm="code";st.modus="vrij";st.codes=st.pic.rijen.map(function(){return [];});st.sel=0;st.fout=[];st.klaar=false;st.mood="";
+    G.tik();teken();praat(UIT.vrijcode);
+  }
+  else if(a==="doorgeef"){
+    st.scherm="teken";st.modus="door";st.grid=leegRaster(st.size);st.fout=[];st.klaar=false;st.mood="";st.kleur="r";
+    G.tik();teken();praat(UIT.door);
+  }
+}
+app.addEventListener("click",function(e){var el=e.target.closest("[data-a]");if(el&&!el.disabled)actie(el.dataset.a,el);});
+var rt=null;window.addEventListener("resize",function(){clearTimeout(rt);rt=setTimeout(function(){if(!verft)teken();},150);});
+
+function toonInfo(){
+  var d=document.createElement("div");d.className="paneel";
+  d.innerHTML='<div role="dialog" aria-label="Info voor de leerkracht"><h2>Voor de leerkracht</h2>'+
+  '<p>A5 · Robbie\'s pixeltekenaar · 1e en 2e leerjaar · 10 tot 15 minuten, alleen of per twee.</p>'+
+  '<h3>Drie manieren van spelen</h3><ul>'+
+  '<li><b>Teken wat de code zegt:</b> naast elke rij staat een code, bv. 2 wit, 1 rood. De leerling kleurt het rooster in. Drie tekeningen per niveau, daarna een ster. Niveau 1 is een rooster van 5 bij 5 met één kleur, niveau 2 van 6 bij 6 met twee kleuren, niveau 3 van 8 bij 8.</li>'+
+  '<li><b>Schrijf de code bij de tekening:</b> de omgekeerde richting. De leerling kiest een kleur en tikt hoeveel vakjes. Robbie tekent de code meteen mee, zodat de leerling ziet of ze klopt.</li>'+
+  '<li><b>Zelf tekenen (gele kaart):</b> een eigen tekening maken, de code schrijven en de code doorgeven aan een klasgenoot, die de tekening namaakt zonder het origineel te zien.</li></ul>'+
+  '<h3>Doelen (leerlijn 1e graad)</h3><ul><li>Een algoritme door middel van codes en symbolen representeren en communiceren.</li><li>Onderzoeken hoe een algoritme kan worden weergegeven door middel van symbolen.</li><li>Geven van een reeks instructies met symbolen, letters en getallen.</li></ul>'+
+  '<h3>Tips</h3><ul><li>1e leerjaar: start met Teken wat de code zegt, niveau 1 en 2. Schrijf de code past beter in het 2e leerjaar.</li>'+
+  '<li>Tik op een code om ze te horen. Laat de leerling de code ook hardop lezen: twee wit, één rood, twee wit.</li>'+
+  '<li>Een rood bolletje naast een rij betekent dat die rij nog niet klopt. Zo zoekt de leerling zelf de fout.</li>'+
+  '<li>Tik een vakje met dezelfde kleur nog eens aan om het weer wit te maken.</li>'+
+  '<li>De sterren worden alleen op dit toestel bewaard.</li></ul>'+
+  '<button class="sluit">Sluiten</button></div>';
+  d.addEventListener("click",function(e){if(e.target===d||e.target.classList.contains("sluit"))d.remove();});
+  document.body.appendChild(d);
+}
+try{if(window.speechSynthesis)window.speechSynthesis.getVoices();}catch(e){}
+laatste="Dag! Ik ben Robbie. Ik teken met codes. Kies wat je wil doen.";
+teken();
+})();
+</script>
+</body>
+</html>

@@ -6,6 +6,7 @@ Leerapps voor het basisonderwijs met Robbie Robot als gids. Elke app staat in ee
 |---|---|---|
 | Robbie in Robotland | [`robotland/`](robotland/) | 2de kleuterklas – 6de leerjaar |
 | Robbie's Raketrace (maaltafels) | [`maaltafels/`](maaltafels/) | vanaf het 2de leerjaar |
+| Robbie's pixeltekenaar | [`pixeltekenaar/`](pixeltekenaar/) | 1ste en 2de leerjaar |
 
 ## Online zetten (GitHub Pages)
 

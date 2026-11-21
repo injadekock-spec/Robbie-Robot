@@ -525,11 +525,12 @@ textarea.tin{width:100%;min-height:120px}
 <!-- DIPLOMA -->
 <div class="ov" id="dipOv"><div class="card dipcard">
   <img id="dipImg" alt="Diploma">
-  <div class="namerow" id="dipNameRow"><input id="dipName" placeholder="Naam van de leerling" maxlength="40"><button class="btn blue" id="dipNameOk" style="padding:8px 16px;font-size:17px">OK</button></div>
+  <div class="namerow" id="dipNameRow"><input id="dipName" placeholder="Typ hier je naam" maxlength="40" autocomplete="off"><button class="btn blue" id="dipNameOk" style="padding:8px 16px;font-size:17px">OK</button></div>
   <div class="cardbtns" style="margin-top:12px">
     <button class="btn gold" id="dipPdf"></button><button class="btn blue" id="dipPrint"></button>
     <button class="btn gray" id="dipClose">Sluiten</button>
   </div>
+  <p class="dipmsg">De naam komt alleen op het diploma en wordt nergens bewaard. Leeg laten kan ook: dan schrijf je de naam er na het afdrukken zelf op.</p>
   <p class="dipmsg" id="dipMsg"></p>
 </div></div>
 
@@ -1388,13 +1389,16 @@ async function openDiplomaFor(name,n,p,editable){
   const starCount=LEVELS[n].reduce((a,_,i)=>a+(p.stars[n+'-'+i]||0),0);
   const t=p.done&&p.done[n]?new Date(p.done[n]):new Date();
   dipCtx={n,name:name||'',starCount,date:t.toLocaleDateString('nl-BE',{day:'numeric',month:'long',year:'numeric'})};
-  $('dipNameRow').style.display=editable?'flex':'none';$('dipName').value=dipCtx.name;$('dipMsg').textContent='';
+  // naam enkel voor het diploma: wordt nergens bewaard. Een klasnummer als naam vullen we niet vooraf in.
+  if(/^\D{0,5}\d{1,3}\D{0,3}$/.test(dipCtx.name.trim()))dipCtx.name='';
+  $('dipNameRow').style.display='flex';$('dipName').value=dipCtx.name;$('dipMsg').textContent='';
   $('dipPdf').innerHTML=`${ART.diploma.replace('<svg','<svg width="30" height="30"')} Download PDF`;$('dipPrint').textContent='Afdrukken';
   await refreshDiploma();$('dipOv').classList.add('on');SFX.unlock();
 }
 function openDiploma(sid,n){const s=Store.student(sid);openDiplomaFor(s?s.name:'',n,Store.p(sid),!s);}
 async function refreshDiploma(){const c=await drawDiploma(dipCtx.name,dipCtx.n,dipCtx.starCount,dipCtx.date);dipCtx.canvas=c;const u=c.toDataURL('image/jpeg',.9);$('dipImg').src=u;$('printImg').src=u;}
 $('dipNameOk').addEventListener('click',()=>{dipCtx.name=$('dipName').value.trim().slice(0,40);refreshDiploma();});
+let dipNameT=null;$('dipName').addEventListener('input',()=>{clearTimeout(dipNameT);dipNameT=setTimeout(()=>$('dipNameOk').click(),500);});
 $('dipName').addEventListener('keydown',e=>{if(e.key==='Enter')$('dipNameOk').click();});
 $('dipClose').addEventListener('click',()=>$('dipOv').classList.remove('on'));
 $('dipPdf').addEventListener('click',async()=>{

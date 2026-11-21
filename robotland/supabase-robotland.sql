@@ -30,12 +30,16 @@ create index if not exists leerlingen_klas_idx on public.leerlingen(klas_id);
 
 create table if not exists public.voortgang (
   leerling_id uuid not null references public.leerlingen(id) on delete cascade,
-  sleutel     text not null check (sleutel ~ '^[1-3]-([0-9]|1[01])$'),  -- niveau-level, bv. 2-11
+  sleutel     text not null check (sleutel ~ '^[1-3]-([0-9]|1[0-9])$'),  -- niveau-level, bv. 2-17 (max. 20 levels per niveau)
   sterren     smallint not null check (sterren between 1 and 3),
   eerst       timestamptz not null default now(),   -- eerste keer opgelost
   bijgewerkt  timestamptz not null default now(),   -- laatste verbetering
   primary key (leerling_id, sleutel)
 );
+
+-- 1b. Bestaande installatie bijwerken: tot 20 levels per niveau
+alter table public.voortgang drop constraint if exists voortgang_sleutel_check;
+alter table public.voortgang add constraint voortgang_sleutel_check check (sleutel ~ '^[1-3]-([0-9]|1[0-9])$');
 
 -- 2. Wie is leerkracht? ------------------------------------------------
 create or replace function public.rr_is_leerkracht()

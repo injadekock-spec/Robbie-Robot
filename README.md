@@ -7,6 +7,7 @@ Leerapps voor het basisonderwijs met Robbie Robot als gids. Elke app staat in ee
 | Robbie in Robotland | [`robotland/`](robotland/) | 2de kleuterklas – 6de leerjaar |
 | Robbie's Raketrace (maaltafels) | [`maaltafels/`](maaltafels/) | vanaf het 2de leerjaar |
 | Robbie's pixeltekenaar | [`pixeltekenaar/`](pixeltekenaar/) | 1ste en 2de leerjaar |
+| Robbie's Schaakkasteel | [`schaken/`](schaken/) | sterke denkers vanaf 7 jaar |
 
 ## Online zetten (GitHub Pages)
 
@@ -33,3 +34,19 @@ De maaltafel-app gebruikt **hetzelfde Supabase-project, dezelfde klassen, klasco
 5. Code vergeten? In de app: *Overzicht voor de juf* → aanmelden met je leerkracht-account → **🔑 wissen**. Het kind kiest dan een nieuwe code; de voortgang blijft.
 
 Leerlingen kunnen de databank nooit rechtstreeks lezen: alleen hun eigen voortgang, via klascode + prentjescode. De prentjescode zelf wordt niet bewaard, alleen een hash.
+
+## Robbie's Schaakkasteel (schaken) instellen
+
+De schaakapp gebruikt **hetzelfde Supabase-project, dezelfde klassen, klascodes, leerlingen en hetzelfde leerkrachtaccount** als Robotland en Raketrace.
+
+1. De databank is al klaar: [`schaken/supabase-schaken.sql`](schaken/supabase-schaken.sql) werd uitgevoerd. Alleen bij een nieuw Supabase-project voer je het opnieuw uit, na het maaltafel-script.
+2. Geef het kind de link `…/schaken/?klas=ABC123` (met je eigen klascode), of laat het de klascode zelf intikken. Daarna kiest het zijn naam en een **eigen prentjescode** voor de schaakapp.
+3. Zonder klascode kan je ook "Oefenen op dit toestel": dan blijft de voortgang alleen op dat toestel.
+4. Leerkrachtpaneel: op het startscherm *Voor de juf of meester* → aanmelden → klascode. Daar zie je per leerling de werelden, sterren, reflecties, puzzels en partijen, en stel je in:
+   - voorlezen standaard aan of uit,
+   - het maximum aantal partijen per dag in de speelzaal (standaard 2),
+   - hoeveel opdrachten of puzzels een kind die dag moet maken per partij (standaard 3),
+   - alle werelden ontgrendelen,
+   - prentjescode wissen of voortgang wissen.
+
+De app is één bestand (`schaken/index.html`) zonder externe bibliotheken; alleen de lettertypes komen van Google Fonts.

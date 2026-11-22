@@ -3173,11 +3173,26 @@ function toonJuf(melding = '') {
   }
   const code = (() => { try { return sessionStorage.getItem('rs-kc') || ''; } catch (e) { return ''; } })();
   app.innerHTML = kopJuf() + `<main><h1>Leerkrachtpaneel</h1>
-    <form id="kf" class="rij" style="margin:14px 0;max-width:520px"><input id="kc" maxlength="6" placeholder="Klascode" value="${esc(code)}" aria-label="Klascode"><button class="knop-hoofd" style="flex:0 0 auto">Toon klas</button></form>
+    <h2 style="margin-top:14px">Kies een klas</h2>
+    <div class="knoppen" id="klassen"><p>Klassen laden...</p></div>
+    <details style="margin:12px 0"><summary>Klascode zelf intikken</summary>
+    <form id="kf" class="rij" style="margin:10px 0;max-width:520px"><input id="kc" maxlength="6" placeholder="Klascode" value="${esc(code)}" aria-label="Klascode"><button class="knop-hoofd" style="flex:0 0 auto">Toon klas</button></form></details>
     ${melding ? `<p class="melding fout">${esc(melding)}</p>` : ''}
     <div id="ov"></div></main>`;
   bindJuf(terugStart);
-  app.querySelector('#kf').onsubmit = e => { e.preventDefault(); const c = app.querySelector('#kc').value.trim().toUpperCase(); try { sessionStorage.setItem('rs-kc', c); } catch (err) {} laadKlas(c, tok); };
+  const kies = c => { try { sessionStorage.setItem('rs-kc', c); } catch (err) {} app.querySelectorAll('[data-kc]').forEach(b => b.classList.toggle('knop-hoofd', b.dataset.kc === c)); laadKlas(c, tok); };
+  app.querySelector('#kf').onsubmit = e => { e.preventDefault(); kies(app.querySelector('#kc').value.trim().toUpperCase()); };
+  (async () => {
+    const el = app.querySelector('#klassen');
+    try {
+      const r = await fetch(`${CFG.url}/rest/v1/klassen?select=naam,code&order=naam`, { headers: { apikey: CFG.key, Authorization: 'Bearer ' + tok } });
+      if (r.status === 401) { try { sessionStorage.removeItem('rs-tok'); } catch (x) {} return toonJuf('Je sessie is verlopen. Meld je opnieuw aan.'); }
+      const lijst = r.ok ? await r.json() : [];
+      el.innerHTML = lijst.length ? lijst.map(k => `<button data-kc="${esc(k.code)}" class="${k.code === code ? 'knop-hoofd' : ''}">${esc(k.naam)} <small style="opacity:.75">(${esc(k.code)})</small></button>`).join('') : '<p>Nog geen klassen. Maak er een aan in Robotland (slotje, Klassen).</p>';
+      el.querySelectorAll('[data-kc]').forEach(b => b.onclick = () => kies(b.dataset.kc));
+      if (!code && lijst.length === 1) kies(lijst[0].code);
+    } catch (e) { el.innerHTML = '<p>De klassen konden niet geladen worden. Tik de klascode zelf in.</p>'; }
+  })();
   if (code) laadKlas(code, tok);
 }
 function kopJuf() {

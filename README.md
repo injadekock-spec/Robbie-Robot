@@ -42,7 +42,7 @@ De schaakapp gebruikt **hetzelfde Supabase-project, dezelfde klassen, klascodes,
 1. De databank is al klaar: [`schaken/supabase-schaken.sql`](schaken/supabase-schaken.sql) werd uitgevoerd. Alleen bij een nieuw Supabase-project voer je het opnieuw uit, na het maaltafel-script.
 2. Geef het kind de link `…/schaken/?klas=ABC123` (met je eigen klascode), of laat het de klascode zelf intikken. Daarna kiest het zijn naam en een **eigen prentjescode** voor de schaakapp.
 3. Zonder klascode kan je ook "Oefenen op dit toestel": dan blijft de voortgang alleen op dat toestel.
-4. Leerkrachtpaneel: op het startscherm *Voor de juf of meester* → aanmelden → klascode. Daar zie je per leerling de werelden, sterren, reflecties, puzzels en partijen, en stel je in:
+4. Leerkrachtpaneel: op het startscherm *Voor de juf of meester* → aanmelden → tik op je klas (je klassen verschijnen vanzelf). Daar zie je per leerling de werelden, sterren, reflecties, puzzels en partijen, en stel je in:
    - voorlezen standaard aan of uit,
    - het maximum aantal partijen per dag in de speelzaal (standaard 2),
    - hoeveel opdrachten of puzzels een kind die dag moet maken per partij (standaard 3),

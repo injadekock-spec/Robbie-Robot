@@ -19,6 +19,18 @@ create table if not exists public.maaltafels (
   bijgewerkt      timestamptz not null default now()
 );
 
+-- 1b. Tafels die de juf vrijgeeft ---------------------------------------
+--    instellingen = {"m":[10 getallen],"d":[10 getallen]} voor tafel 1 t.e.m. 10
+--    0 = op slot · 1 = nieuw (oefenen tot het diploma van Bugbot) · 2 = gekend
+--    Per klas een standaard; per leerling kan je die overschrijven ({} = volgt de klas).
+alter table public.maaltafels add column if not exists instellingen jsonb not null default '{}'::jsonb;
+
+create table if not exists public.maaltafels_klas (
+  klas_id      uuid primary key references public.klassen(id) on delete cascade,
+  instellingen jsonb not null default '{}'::jsonb,
+  bijgewerkt   timestamptz not null default now()
+);
+
 -- 2. Beveiliging -----------------------------------------------------------
 --    Leerlingen kunnen NIETS rechtstreeks lezen of schrijven: alleen via de
 --    functies hieronder, met klascode + prentjescode. De leerkracht beheert alles.
@@ -26,6 +38,12 @@ alter table public.maaltafels enable row level security;
 
 drop policy if exists "leerkracht beheert maaltafels" on public.maaltafels;
 create policy "leerkracht beheert maaltafels" on public.maaltafels
+  for all to authenticated using (public.rr_is_leerkracht()) with check (public.rr_is_leerkracht());
+
+alter table public.maaltafels_klas enable row level security;
+
+drop policy if exists "leerkracht beheert maaltafels_klas" on public.maaltafels_klas;
+create policy "leerkracht beheert maaltafels_klas" on public.maaltafels_klas
   for all to authenticated using (public.rr_is_leerkracht()) with check (public.rr_is_leerkracht());
 
 -- 3. Hulpfuncties ----------------------------------------------------------
@@ -40,6 +58,17 @@ returns boolean language sql stable security definer set search_path = public as
     select 1 from public.leerlingen l join public.klassen k on k.id = l.klas_id
     where l.id = p_leerling and k.code = upper(trim(p_code))
   );
+$$;
+
+-- Welke tafels mag deze leerling oefenen? Eigen instelling, anders die van de klas.
+create or replace function public.mt_tafels(p_leerling uuid)
+returns jsonb language sql stable security definer set search_path = public as $$
+  select coalesce(
+    (select m.instellingen from public.maaltafels m
+      where m.leerling_id = p_leerling and m.instellingen <> '{}'::jsonb),
+    (select k.instellingen from public.maaltafels_klas k
+      join public.leerlingen l on l.klas_id = k.klas_id where l.id = p_leerling),
+    '{}'::jsonb);
 $$;
 
 -- 4. Functies voor de leerlingen -------------------------------------------
@@ -78,7 +107,8 @@ begin
     return json_build_object('ok', false, 'fout', 'code_bestaat');
   end if;
   return json_build_object('ok', true, 'gegevens',
-    (select gegevens from public.maaltafels where leerling_id = p_leerling));
+    (select gegevens from public.maaltafels where leerling_id = p_leerling),
+    'tafels', public.mt_tafels(p_leerling));
 end;
 $$;
 
@@ -105,7 +135,7 @@ begin
     return json_build_object('ok', false, 'fout', 'foute_code');
   end if;
   update public.maaltafels set mislukt = 0, geblokkeerd_tot = null where leerling_id = p_leerling;
-  return json_build_object('ok', true, 'gegevens', r.gegevens);
+  return json_build_object('ok', true, 'gegevens', r.gegevens, 'tafels', public.mt_tafels(p_leerling));
 end;
 $$;
 
@@ -126,7 +156,7 @@ begin
   if not found then
     return json_build_object('ok', false, 'fout', 'foute_code');
   end if;
-  return json_build_object('ok', true);
+  return json_build_object('ok', true, 'tafels', public.mt_tafels(p_leerling));
 end;
 $$;
 
@@ -141,10 +171,13 @@ begin
   return coalesce((
     select json_agg(json_build_object('id', l.id, 'naam', l.naam, 'symbool', l.symbool,
              'heeft_code', m.pin_hash is not null, 'gegevens', coalesce(m.gegevens, '{}'::jsonb),
-             'bijgewerkt', m.bijgewerkt) order by l.volgorde, l.naam)
+             'bijgewerkt', m.bijgewerkt,
+             'instellingen', coalesce(m.instellingen, '{}'::jsonb),
+             'klas_instellingen', coalesce(kt.instellingen, '{}'::jsonb)) order by l.volgorde, l.naam)
     from public.leerlingen l
     join public.klassen k on k.id = l.klas_id
     left join public.maaltafels m on m.leerling_id = l.id
+    left join public.maaltafels_klas kt on kt.klas_id = k.id
     where k.code = upper(trim(p_code))), '[]'::json);
 end;
 $$;
@@ -161,6 +194,35 @@ begin
 end;
 $$;
 
+-- Tafels instellen voor de hele klas (p_leerling = null) of voor één leerling
+-- ({} bij een leerling = terug naar de instelling van de klas)
+create or replace function public.mt_tafels_zetten(p_code text, p_leerling uuid, p_instellingen jsonb)
+returns void language plpgsql security definer set search_path = public as $$
+declare v_klas uuid;
+begin
+  if not public.rr_is_leerkracht() then
+    raise exception 'alleen voor leerkrachten' using errcode = '42501';
+  end if;
+  if p_instellingen is null or jsonb_typeof(p_instellingen) <> 'object' or length(p_instellingen::text) > 2000 then
+    raise exception 'ongeldige instellingen';
+  end if;
+  select id into v_klas from public.klassen where code = upper(trim(p_code));
+  if v_klas is null then
+    raise exception 'onbekende klas';
+  end if;
+  if p_leerling is null then
+    insert into public.maaltafels_klas as k (klas_id, instellingen) values (v_klas, p_instellingen)
+    on conflict (klas_id) do update set instellingen = excluded.instellingen, bijgewerkt = now();
+  else
+    if not public.mt_in_klas(p_code, p_leerling) then
+      raise exception 'onbekende leerling';
+    end if;
+    insert into public.maaltafels as m (leerling_id, instellingen) values (p_leerling, p_instellingen)
+    on conflict (leerling_id) do update set instellingen = excluded.instellingen;
+  end if;
+end;
+$$;
+
 -- 6. Rechten -----------------------------------------------------------------
 revoke all on function public.mt_hash(uuid, text) from public, anon, authenticated;
 revoke all on function public.mt_in_klas(text, uuid) from public, anon, authenticated;
@@ -170,9 +232,12 @@ revoke all on function public.mt_laden(text, uuid, text) from public, anon, auth
 revoke all on function public.mt_bewaren(text, uuid, text, jsonb) from public, anon, authenticated;
 revoke all on function public.mt_overzicht(text) from public, anon, authenticated;
 revoke all on function public.mt_code_wissen(uuid) from public, anon, authenticated;
+revoke all on function public.mt_tafels(uuid) from public, anon, authenticated;
+revoke all on function public.mt_tafels_zetten(text, uuid, jsonb) from public, anon, authenticated;
 grant execute on function public.mt_klas(text) to anon, authenticated;
 grant execute on function public.mt_code_kiezen(text, uuid, text) to anon, authenticated;
 grant execute on function public.mt_laden(text, uuid, text) to anon, authenticated;
 grant execute on function public.mt_bewaren(text, uuid, text, jsonb) to anon, authenticated;
 grant execute on function public.mt_overzicht(text) to authenticated;
 grant execute on function public.mt_code_wissen(uuid) to authenticated;
+grant execute on function public.mt_tafels_zetten(text, uuid, jsonb) to authenticated;

@@ -32,6 +32,7 @@ De maaltafel-app gebruikt **hetzelfde Supabase-project, dezelfde klassen, klasco
 3. Geef de kinderen de link `…/maaltafels/?klas=ABC123` (met je eigen klascode), of laat hen de klascode zelf intikken.
 4. Een kind kiest zijn naam en de eerste keer een **geheime code van 3 prentjes**. Met klascode + naam + prentjescode staat de voortgang daarna op elk toestel klaar.
 5. Code vergeten? In de app: *Overzicht voor de juf* → aanmelden met je leerkracht-account → **🔑 wissen**. Het kind kiest dan een nieuwe code; de voortgang blijft.
+6. **Tafels klaarzetten:** in *Overzicht voor de juf* kies je per tafel (maal en deel apart) 🔒 op slot, 🎯 nieuw of ✅ gekend, voor de hele klas of voor één kind. Een kind met 🎯 nieuwe tafels oefent enkel die, tot het voor elk ervan het diploma van Bugbot heeft; daarna mengt het vrij met alle ✅ gekende tafels. Zonder instelling mag alles.
 
 Leerlingen kunnen de databank nooit rechtstreeks lezen: alleen hun eigen voortgang, via klascode + prentjescode. De prentjescode zelf wordt niet bewaard, alleen een hash.
 

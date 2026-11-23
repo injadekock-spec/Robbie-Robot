@@ -203,6 +203,24 @@ h1,h2,h3{margin:0;font-weight:700}
 .pinpad button{font-size:38px;padding:10px 0;border-radius:16px;background:#eef0fb;box-shadow:0 4px 0 #c9cde6}
 .pinpad button:active{transform:translateY(3px);box-shadow:0 1px 0 #c9cde6}
 .codein{text-transform:uppercase;letter-spacing:.25em;text-align:center}
+.tbtn[disabled]{opacity:.35;box-shadow:none;cursor:default}
+.tbtn.focus{outline:4px solid var(--yellow);outline-offset:-4px}
+.bbtn.focus{outline:4px solid var(--yellow);outline-offset:-4px}
+.bbtn.juflock{opacity:.35}
+.seg button[disabled]{opacity:.35;cursor:default}
+.focusbar{background:#fff7d6;border:3px solid var(--yellow)}
+.focusbar .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.focusbar .chips span{background:#fff;border-radius:12px;padding:5px 10px;font-size:19px;font-weight:700;box-shadow:0 3px 0 #e8d68a}
+.focusbar .chips span.done{background:#d9f8e3;box-shadow:0 3px 0 #9fdcb2}
+.tgrid{display:grid;grid-template-columns:auto repeat(10,1fr);gap:6px;align-items:center;min-width:560px}
+.tgrid .rh{font-weight:700;font-size:17px;padding-right:6px;white-space:nowrap}
+.tcell{border-radius:12px;padding:6px 0 4px;font-size:15px;font-weight:700;line-height:1.15;color:var(--ink);background:#eef0fb;box-shadow:0 3px 0 #c9cde6;min-width:0}
+.tcell b{display:block;font-size:20px}
+.tcell.s1{background:#fff3c4;box-shadow:0 3px 0 #e0c060}
+.tcell.s2{background:#d9f8e3;box-shadow:0 3px 0 #9fdcb2}
+.tcell.s0{background:#eef0fb;color:#9aa0c3}
+.tedit select{font:inherit;font-size:18px;padding:8px 10px;border-radius:12px;border:3px solid var(--line);background:#fff;color:var(--ink);max-width:100%}
+.tlink{background:none;color:var(--purple);font-weight:600;font-size:16px;padding:0;text-align:left;text-decoration:underline}
 /* overlay */
 .overlay{position:fixed;inset:0;background:rgba(10,15,40,.75);display:none;place-items:center;z-index:50;padding:16px}
 .overlay.on{display:grid}
@@ -282,6 +300,7 @@ const URLCODE=(()=>{try{return normCode(new URLSearchParams(location.search).get
 const FIXCODE=normCode(CFG.klascode)||URLCODE;
 const klasCode=()=>FIXCODE||store.klascode||'';
 let sess=null;        /* aangemelde leerling: {id,pin} (alleen in het geheugen) */
+let jufT=null;        /* tafels die de juf vrijgaf voor de aangemelde leerling (null = geen beperking) */
 let teacherTok=null;  /* aangemelde leerkracht */
 let klas=null;        /* {klas:{naam}, leerlingen:[...]} */
 let syncState='ok', pushT=0, pushing=false, pushAgain=false;
@@ -300,12 +319,44 @@ async function pushNow(keepalive){
   if(pushing){pushAgain=true;return}
   pushing=true;
   try{const r=await rpc('mt_bewaren',{p_code:klasCode(),p_leerling:s0.id,p_pin:s0.pin,p_gegevens:p},null,keepalive);
-    setSync(r&&r.ok?'ok':'err')}
+    setSync(r&&r.ok?'ok':'err'); if(r&&r.ok&&sess===s0&&'tafels' in r) setJufT(r.tafels)}
   catch(e){setSync('err'); if(sess===s0) pushT=setTimeout(pushNow,15000)}
   pushing=false;
   if(pushAgain){pushAgain=false; if(sess===s0) schedulePush()}
 }
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&SYNC&&sess)pushNow(true)});
+/* ---------- Tafels van de juf: 0 = op slot, 1 = nieuw (tot het diploma), 2 = gekend ---------- */
+const TN=[1,2,3,4,5,6,7,8,9,10];
+function cleanT(x){
+  if(!x||typeof x!=='object'||(!Array.isArray(x.m)&&!Array.isArray(x.d))) return null;
+  const row=a=>TN.map(t=>{const v=Array.isArray(a)?a[t-1]:2;return v===0||v===1?v:2});
+  return {m:row(x.m),d:row(x.d)};
+}
+const tState=(T,op,t)=>T?T[op][t-1]:2;
+function openFocusOf(T,p){const r=[];if(!T)return r;
+  for(const op of ['m','d'])for(const t of TN)if(T[op][t-1]===1&&!(p.diplomas||{})[op+t])r.push(op+t);return r}
+function allowedSet(T,p){
+  const f=openFocusOf(T,p); if(f.length) return new Set(f);
+  const s=new Set(); for(const op of ['m','d'])for(const t of TN)if(tState(T,op,t)>0)s.add(op+t); return s;
+}
+const opsOf=op=>op==='x'?['m','d']:[op];
+/* past keuze van maal/deel en tafels aan zodat het kind alleen oefent wat mag */
+function fitChoice(p){
+  if(!jufT) return null;
+  const al=allowedSet(jufT,p), has=o=>TN.some(t=>al.has(o+t));
+  const okOp={m:has('m'),d:has('d')}; okOp.x=okOp.m&&okOp.d;
+  if(!okOp[p.op]) p.op=okOp.m?'m':okOp.d?'d':p.op;
+  const tOk=t=>opsOf(p.op).some(o=>al.has(o+t));
+  const allT=TN.filter(tOk);
+  p.tables=(p.tables||[]).filter(tOk); if(!p.tables.length) p.tables=allT.slice();
+  return {al,okOp,tOk,allT,focus:openFocusOf(jufT,p)};
+}
+function setJufT(x){
+  const n=cleanT(x), changed=JSON.stringify(n)!==JSON.stringify(jufT);
+  jufT=n;
+  if(changed&&$('#s-menu').classList.contains('on')&&!$('#ov').classList.contains('on')) renderMenu();
+}
+const tLbl=k=>(k[0]==='d'?': ':'× ')+k.slice(1);
 const mkPlayer=(id,name,avatar)=>({id,name,avatar,days:{},records:{},facts:{},badges:[],tables:[2,5,10],op:'m',dur:60,stars:0});
 
 const AVATARS=['🦊','🐼','🐸','🦁','🐯','🐰','🐨','🐵','🦄','🐙','🐧','🐶','🐱','🦖','🐝','🦉','🐳','🐞'];
@@ -530,7 +581,7 @@ function askPin(l,msg){
   pinModal(`${esc(l.symbool)} ${esc(l.naam)}`,msg||'Tik je geheime code van 3 prentjes.',async pin=>{
     $('#pinsub').textContent='Even geduld…';
     let r; try{r=await rpc('mt_laden',{p_code:klasCode(),p_leerling:l.id,p_pin:pin})}catch(e){return askPin(l,'Geen verbinding. Probeer het nog eens.')}
-    if(r&&r.ok) return adopt(l,r.gegevens,pin);
+    if(r&&r.ok) return adopt(l,r.gegevens,pin,r.tafels);
     if(r&&r.fout==='geen_code'){l.heeft_code=false;return choosePin(l)}
     askPin(l,r&&r.fout==='geblokkeerd'?'Te veel foute pogingen. Wacht 2 minuutjes.':'Dat klopt niet. Probeer opnieuw of vraag het aan de juf.');
   });
@@ -541,14 +592,15 @@ function choosePin(l,msg){
       if(pin1!==pin2) return choosePin(l,'Dat was niet dezelfde code. Kies opnieuw 3 prentjes.');
       $('#pinsub').textContent='Even geduld…';
       let r; try{r=await rpc('mt_code_kiezen',{p_code:klasCode(),p_leerling:l.id,p_pin:pin1})}catch(e){return choosePin(l,'Geen verbinding. Probeer het nog eens.')}
-      if(r&&r.ok) return adopt(l,r.gegevens,pin1);
+      if(r&&r.ok) return adopt(l,r.gegevens,pin1,r.tafels);
       if(r&&r.fout==='code_bestaat'){l.heeft_code=true;return askPin(l,'Je hebt al een code. Tik die in.')}
       choosePin(l,'Dat lukte niet. Probeer het nog eens.');
     });
   });
 }
-function adopt(l,data,pin){
+function adopt(l,data,pin,tafels){
   $('#ov').classList.remove('on');
+  jufT=cleanT(tafels);
   const local=store.players[l.id], remote=data&&data.days?data:null;
   /* het toestel wint alleen als het nieuwere, nog niet doorgestuurde voortgang heeft */
   let p=local&&(local._ts||0)>((remote&&remote._ts)||0)?local:remote;
@@ -582,8 +634,60 @@ async function loadOverview(){
   let rows;
   try{rows=await rpc('mt_overzicht',{p_code:klasCode()},teacherTok)}
   catch(e){teacherTok=null;return teacherModal(e.status===403||e.status===401?'Dit account staat niet in de lijst leerkrachten.':'Dat lukte niet. Probeer het nog eens.')}
-  renderOverview((rows||[]).map(r=>{const p=r.gegevens&&r.gegevens.days?r.gegevens:mkPlayer(r.id,r.naam,r.symbool);
-    p.id=r.id;p.name=r.naam;p.avatar=r.symbool;p._code=!!r.heeft_code;return ensure(p)}));
+  rows=rows||[];
+  ovKlasT=cleanT(rows[0]&&rows[0].klas_instellingen);
+  ovRows=rows.map(r=>{const p=r.gegevens&&r.gegevens.days?r.gegevens:mkPlayer(r.id,r.naam,r.symbool);
+    p.id=r.id;p.name=r.naam;p.avatar=r.symbool;p._code=!!r.heeft_code;p._own=cleanT(r.instellingen);return ensure(p)});
+  if(ovSel!=='klas'&&!ovRows.some(p=>p.id===ovSel)) ovSel='klas';
+  ovEdit=null; renderOverview(ovRows);
+}
+/* ---------- Leerkracht: tafels klaarzetten ---------- */
+let ovKlasT=null, ovRows=[], ovSel='klas', ovEdit=null, ovMsg='';
+const ALL2=()=>({m:TN.map(()=>2),d:TN.map(()=>2)});
+const cloneT=T=>({m:[...T.m],d:[...T.d]});
+const ovStudent=()=>ovRows.find(p=>p.id===ovSel)||null;
+function ovBase(){const st=ovStudent(); return st?(st._own||ovKlasT||ALL2()):(ovKlasT||ALL2())}
+function tafelEditor(){
+  const st=ovStudent(), T=ovEdit||ovBase(), dirty=!!ovEdit;
+  const ic=['🔒','🎯','✅'];
+  const row=o=>`<div class="rh">${o==='d'?': delen':'× maal'}</div>`+TN.map(t=>{const v=T[o][t-1];
+    const dip=st&&st.diplomas[o+t];
+    return `<button class="tcell s${v}" data-a="tcell" data-o="${o}" data-t="${t}" title="${['op slot','nieuw','gekend'][v]}"><b>${ic[v]}</b>${t}${dip?' 🎓':''}</button>`}).join('');
+  const focus=st?openFocusOf(T,st):[];
+  return `<div class="card tedit" style="margin-bottom:14px">
+    <div class="row" style="margin-bottom:10px"><div class="lbl grow" style="margin:0">🎯 Welke tafels mogen ze oefenen?</div>
+      <select id="tsel">${[['klas','👥 Hele klas (standaard)'],...ovRows.map(p=>[p.id,`${p.avatar} ${p.name}${p._own?' · eigen':''}`])]
+        .map(([v,l])=>`<option value="${esc(v)}" ${v===ovSel?'selected':''}>${esc(l)}</option>`).join('')}</select></div>
+    <div class="muted" style="font-size:15px;margin-bottom:10px">${st
+      ?(st._own||dirty?`<b>${esc(st.name)}</b> heeft een eigen instelling.`:`<b>${esc(st.name)}</b> volgt nu de klas. Pas je iets aan, dan krijgt ${esc(st.name)} een eigen instelling.`)
+      :`Geldt voor iedereen zonder eigen instelling (${ovRows.filter(p=>p._own).length} kind${ovRows.filter(p=>p._own).length===1?'':'eren'} met een eigen instelling).`}</div>
+    <div style="overflow-x:auto;padding-bottom:4px"><div class="tgrid">${row('m')}${row('d')}</div></div>
+    <div class="legend"><span>🔒 op slot</span><span>🎯 nieuw: enkel deze oefenen tot het diploma van Bugbot</span><span>✅ gekend: vrij mengen</span>${st?'<span>🎓 diploma behaald</span>':''}</div>
+    ${st&&focus.length?`<div style="font-size:16px;margin-top:8px">Nog te halen: <b>${focus.map(tLbl).join(', ')}</b></div>`:''}
+    <div class="row" style="margin-top:12px;gap:8px">
+      <button class="btn small" data-a="tall" data-v="2">Alles ✅</button>
+      <button class="btn small" data-a="tall" data-v="0">Alles 🔒</button>
+      ${st&&st._own?'<button class="btn small" data-a="tback">↩ Terug naar de klas</button>':''}
+      <div class="grow"></div>
+      <span class="muted" id="tmsg2" style="font-size:15px">${ovMsg||''}</span>
+      ${dirty?'<button class="btn small" data-a="tundo">Annuleren</button>':''}
+      <button class="btn teal" style="font-size:18px;padding:10px 18px" data-a="tsave" ${dirty?'':'disabled'}>💾 Bewaren</button>
+    </div></div>`;
+}
+function ovRender(){const y=window.scrollY;renderOverview(ovRows);window.scrollTo(0,y)}
+async function tSave(T){
+  const st=ovStudent(); T=T||ovEdit; if(!T) return;
+  ovMsg='Even geduld…'; ovRender();
+  try{await rpc('mt_tafels_zetten',{p_code:klasCode(),p_leerling:st?st.id:null,p_instellingen:T},teacherTok);
+    ovMsg='✔ Bewaard. De kinderen zien het bij hun volgende ronde.';}
+  catch(e){ovMsg='⚠️ Bewaren lukte niet. Probeer het nog eens.';return ovRender()}
+  const m=ovMsg; await loadOverview(); ovMsg=m; ovRender(); setTimeout(()=>{if(ovMsg===m){ovMsg='';const el=$('#tmsg2');if(el)el.textContent=''}},5000);
+}
+function tafelSummary(p){
+  const T=p._own||ovKlasT; if(!T) return '<span class="muted">alles</span>';
+  const f=openFocusOf(T,p), n=allowedSet(T,p).size;
+  const txt=!n?'🔒 niets':f.length?'🎯 '+f.map(tLbl).join(', '):'✅ mengen';
+  return `<button class="tlink" data-a="tpick" data-id="${p.id}">${txt}</button>${p._own?' <span class="muted" style="font-size:13px">(eigen)</span>':''}`;
 }
 
 function newPlayerModal(){
@@ -610,16 +714,30 @@ function confirmModal(text,yes,label='Ja, wissen',cls='coral'){
 
 /* ---------- Scherm: menu ---------- */
 const recKey=p=>p.op+'|'+p.dur+'|'+[...p.tables].sort((a,b)=>a-b).join(',');
+function focusBar(p,fit){
+  if(!fit) return '';
+  if(!fit.allT.length) return `<div class="card focusbar" style="margin-bottom:14px"><div class="row nowrap"><div>${robbie('think',56)}</div>
+    <div class="grow" style="font-size:19px">De juf heeft nog geen tafels voor jou klaargezet. Vraag het even aan de juf!</div></div></div>`;
+  if(!fit.focus.length) return '';
+  const all=[]; for(const op of ['m','d'])for(const t of TN)if(jufT[op][t-1]===1)all.push(op+t);
+  const left=fit.focus.length;
+  return `<div class="card focusbar" style="margin-bottom:14px"><div class="row nowrap"><div>${robbie('happy',56)}</div>
+    <div class="grow"><div style="font-size:19px;font-weight:600">🎯 Nieuwe tafels van de juf!</div>
+    <div class="muted" style="font-size:16px">Oefen ze tot ze groen zijn op je snelheidskaart en versla Bugbot. Met ${left===1?'dat diploma':"al die diploma's"} mag je ze weer mengen met de tafels die je al kent.</div>
+    <div class="chips">${all.map(k=>`<span class="${p.diplomas[k]?'done':''}">${tLbl(k)} ${p.diplomas[k]?'🎓':bossIsOpen(p,k[0],+k.slice(1))?'👾':'⏳'}</span>`).join('')}</div></div></div></div>`;
+}
 function renderMenu(){
   const p=P(); if(!p) return renderPlayers();
   addFuel(p,0);
+  const fit=fitChoice(p), al=fit&&fit.al, none=!!fit&&!fit.allT.length;
   const bop=p.op==='d'?'d':'m';
   const fuelMsg=p.tickets>=TK_STORE?'Je hebt al '+p.tickets+' tickets. Speel er eerst één!'
     :p.tkDay.n>=TK_DAY?'Vandaag verdiende je al '+TK_DAY+' tickets. Morgen kan je weer sparen!'
     :'Nog <b>'+(FUEL_MAX-p.fuel)+'</b> juiste sommen voor een speelticket';
   const bossRow=o=>Array.from({length:10},(_,i)=>i+1).map(t=>{
     const st=p.diplomas[o+t]?'won':bossIsOpen(p,o,t)?'open':'lock';
-    return `<button class="bbtn ${st}" data-a="boss" data-o="${o}" data-t="${t}"><b>${st==='won'?'🎓':st==='open'?'👾':'🔒'}</b>${o==='d'?':':'×'} ${t}<small>${'⭐'.repeat(p.diplomas[o+t]||0)}</small></button>`}).join('');
+    const jl=jufT&&tState(jufT,o,t)===0&&!p.diplomas[o+t], fc=fit&&fit.focus.includes(o+t);
+    return `<button class="bbtn ${st} ${jl?'juflock':''} ${fc?'focus':''}" data-a="boss" data-o="${o}" data-t="${t}"><b>${st==='won'?'🎓':st==='open'?'👾':'🔒'}</b>${o==='d'?':':'×'} ${t}<small>${'⭐'.repeat(p.diplomas[o+t]||0)}</small></button>`}).join('');
   save();
   const today=dk(new Date()), done=p.days[today]||0, s=streak(p), rec=p.records[recKey(p)]||0;
   const wd=['zo','ma','di','wo','do','vr','za'];
@@ -630,6 +748,7 @@ function renderMenu(){
     <button class="btn ghost" data-a="shop">⭐ ${coins(p)}</button>
     <button class="btn ghost" data-a="sound">${store.sound?'🔊':'🔇'}</button>
     <button class="btn ghost" data-a="players">👥 Wissel</button></div>
+  ${focusBar(p,fit)}
   <div class="grid2">
    <div class="card">
      <div class="lbl">Vandaag</div>
@@ -642,33 +761,36 @@ function renderMenu(){
    </div>
    <div class="card">
      <div class="lbl">Kies je tafels</div>
-     <div class="tables">${Array.from({length:10},(_,i)=>i+1).map(t=>{
+     <div class="tables">${TN.map(t=>{
         const bolt=(p.op!=='d'&&isBoltTable(p,'m',t))||(p.op==='d'&&isBoltTable(p,'d',t));
-        return `<button class="tbtn ${p.tables.includes(t)?'on':''}" data-a="tbl" data-t="${t}">${t}${bolt?'<span class="bolt">⚡</span>':''}</button>`}).join('')}</div>
+        const ok=!fit||fit.tOk(t), fc=fit&&fit.focus.length&&ok;
+        return `<button class="tbtn ${p.tables.includes(t)&&ok?'on':''} ${fc?'focus':''}" data-a="tbl" data-t="${t}" ${ok?'':'disabled'}>${ok?t:'🔒'}${bolt&&ok?'<span class="bolt">⚡</span>':''}</button>`}).join('')}</div>
      <div class="row" style="margin-top:10px;gap:6px">
-       <button class="btn small" data-a="preset" data-v="2,5,10">2 · 5 · 10</button>
+       ${fit?`<button class="btn small" data-a="preset" data-v="${fit.allT.join(',')}">${fit.focus.length?'🎯 alle nieuwe':'alles wat mag'}</button>
+         <span class="muted" style="font-size:14px">${fit.focus.length?'Eerst de nieuwe tafels!':'🔒 = nog niet van de juf'}</span>`
+       :`<button class="btn small" data-a="preset" data-v="2,5,10">2 · 5 · 10</button>
        <button class="btn small" data-a="preset" data-v="3,4">3 · 4</button>
-       <button class="btn small" data-a="preset" data-v="1,2,3,4,5,6,7,8,9,10">alle</button></div>
+       <button class="btn small" data-a="preset" data-v="1,2,3,4,5,6,7,8,9,10">alle</button>`}</div>
    </div>
   </div>
   <div class="card" style="margin-top:14px">
     <div class="grid2" style="gap:12px">
       <div><div class="lbl">Wat oefen je?</div>
-        <div class="seg">${[['m','× maal'],['d',': delen'],['x','× en :']].map(([v,l])=>`<button class="${p.op===v?'on':''}" data-a="op" data-v="${v}">${l}</button>`).join('')}</div></div>
+        <div class="seg">${[['m','× maal'],['d',': delen'],['x','× en :']].map(([v,l])=>`<button class="${p.op===v?'on':''}" data-a="op" data-v="${v}" ${fit&&!fit.okOp[v]?'disabled':''}>${l}</button>`).join('')}</div></div>
       <div><div class="lbl">Hoe lang race je?</div>
         <div class="seg">${[[60,'1 minuut'],[120,'2 minuten']].map(([v,l])=>`<button class="${p.dur===v?'on':''}" data-a="dur" data-v="${v}">${l}</button>`).join('')}</div></div>
     </div>
   </div>
   <div class="grid2" style="margin-top:16px">
-    <div><button class="btn big yellow" data-a="race">🚀 Raketrace!</button>
+    <div><button class="btn big yellow" data-a="race" ${none?'disabled':''}>🚀 Raketrace!</button>
       <div class="recline">${rec?`Jouw record met deze tafels: <b>${rec} ⭐</b>`:'Nog geen record met deze tafels. Zet er een neer!'}</div></div>
-    <div><button class="btn big teal" data-a="practice">🐢 Rustig oefenen</button>
+    <div><button class="btn big teal" data-a="practice" ${none?'disabled':''}>🐢 Rustig oefenen</button>
       <div class="recline">${PRACTICE_N} sommen, zonder klok</div></div>
   </div>
   <div class="grid2" style="margin-top:14px">
-    <div><button class="btn big purple" data-a="duel">🏁 Wedstrijd tegen Bugbot</button>
+    <div><button class="btn big purple" data-a="duel" ${none?'disabled':''}>🏁 Wedstrijd tegen Bugbot</button>
       <div class="recline">Niveau ${p.duelLv||1}: wie heeft eerst ${DUEL_GOAL} sommen juist?</div></div>
-    <div><button class="btn big orange" data-a="gates">🌀 Poortenvlucht</button>
+    <div><button class="btn big orange" data-a="gates" ${none?'disabled':''}>🌀 Poortenvlucht</button>
       <div class="recline">${p.records['gate|'+recKey(p)]?`Jouw record met deze tafels: <b>${p.records['gate|'+recKey(p)]} ⭐</b>`:'Vlieg door de poort met het juiste antwoord'}</div></div>
   </div>
   <div class="grid2" style="margin-top:16px">
@@ -700,8 +822,9 @@ function renderMenu(){
 /* ---------- Spel ---------- */
 let G=null;
 function buildPool(p){
-  const ops=p.op==='x'?['m','d']:[p.op], pool=[];
-  for(const op of ops)for(const t of p.tables)for(let n=1;n<=10;n++)pool.push({op,t,n,k:fkey(op,t,n)});
+  const ops=opsOf(p.op), pool=[], al=jufT?allowedSet(jufT,p):null;
+  for(const op of ops)for(const t of p.tables){ if(al&&!al.has(op+t)) continue;
+    for(let n=1;n<=10;n++)pool.push({op,t,n,k:fkey(op,t,n)})}
   return pool;
 }
 function nextFact(){
@@ -715,7 +838,7 @@ function nextFact(){
   return cand[cand.length-1];
 }
 function startGame(mode){
-  const p=P(); if(!p.tables.length){return}
+  const p=P(); fitChoice(p); if(!p.tables.length||!buildPool(p).length){return}
   const rk=shopItem('rocket',p.look.rocket);
   G={mode,pool:buildPool(p),score:0,combo:0,q:0,log:[],retry:[],recent:[],input:'',lock:true,
      rec:mode==='race'?(p.records[recKey(p)]||0):0,dur:p.dur*1000,end:0,raf:0,cur:null,hit:-1};
@@ -908,7 +1031,7 @@ const DUEL_GOAL=12;
 /* seconden die Bugbot per som nodig heeft: niveau 1 = 7 s, elk niveau sneller, minimum 2 s */
 const duelMs=lv=>Math.max(2000,lv<=8?7000-500*(lv-1):3500-250*(lv-8));
 function startDuel(){
-  const p=P(); if(!p.tables.length) return;
+  const p=P(); fitChoice(p); if(!p.tables.length||!buildPool(p).length) return;
   const rk=shopItem('rocket',p.look.rocket), lv=p.duelLv||1;
   G={mode:'duel',pool:buildPool(p),score:0,combo:0,q:0,log:[],retry:[],recent:[],input:'',lock:true,raf:0,cur:null,
      goal:DUEL_GOAL,lv,bms:duelMs(lv),start:0,done:false};
@@ -995,7 +1118,7 @@ function gateOpts(f){
   const arr=sh([...c]).slice(0,2); arr.push(a); return sh(arr);
 }
 function startGates(){
-  const p=P(); if(!p.tables.length) return;
+  const p=P(); fitChoice(p); if(!p.tables.length||!buildPool(p).length) return;
   const rk=shopItem('rocket',p.look.rocket);
   G={mode:'gates',pool:buildPool(p),score:0,okc:0,q:0,log:[],retry:[],recent:[],lives:3,lock:true,raf:0,cur:null,judged:true,
      rec:p.records['gate|'+recKey(p)]||0};
@@ -1144,12 +1267,16 @@ function bossEnd(win){
   const give=id=>{if(!p.badges.includes(id)){p.badges.push(id);earned.push(BADGES.find(b=>b.id===id))}};
   p.days[today]=(p.days[today]||0)+1;
   const tk=addFuel(p,G.log.filter(l=>l.ok).length);
-  let bonus=0, extraTk=0;
+  let bonus=0, extraTk=0, unlocked=false;
+  const focusBefore=jufT?openFocusOf(jufT,p).length:0;
   if(win){
     const first=!p.diplomas[k]; bonus=first?35:10;
     p.diplomas[k]=Math.max(p.diplomas[k]||0,lives);
     if(first&&p.tickets<TK_STORE+1){p.tickets++;extraTk=1}
     give('boss'); if(Object.keys(p.diplomas).length>=5) give('boss5');
+    if(focusBefore&&!openFocusOf(jufT,p).length){unlocked=true;
+      /* alle nieuwe tafels gekend: meteen mengen met alles wat mag */
+      p.op='m'; const f=fitChoice(p); if(f){p.tables=f.allT.slice(); if(f.okOp.x){p.op='x';p.tables=fitChoice(p).allT.slice()}}}
   }
   p.stars=(p.stars||0)+bonus;
   if((p.days[today]||0)>=DAY_GOAL) give('goal');
@@ -1167,6 +1294,8 @@ function bossEnd(win){
      <div style="font-size:20px;margin:6px 0">versloeg Bugbot en kent de <b>${tname}</b>!</div>
      <div style="font-size:44px">${'⭐'.repeat(lives)}<span style="opacity:.2">${'⭐'.repeat(3-lives)}</span></div>
      <div class="muted" style="font-size:17px">${lives===3?'Foutloos! Beter kan niet.':'Zonder fout krijg je 3 sterren. Probeer je het later nog eens?'}</div>
+     ${unlocked?`<div class="newrec" style="margin-top:10px;background:var(--teal);color:#fff">🔓 Alle nieuwe tafels gekend! Nu mag je weer mengen.</div>`
+       :win&&jufT&&openFocusOf(jufT,p).length?`<div class="muted" style="font-size:17px;margin-top:6px">🎯 Nog ${openFocusOf(jufT,p).map(tLbl).join(', ')} en dan mag je mengen!</div>`:''}
      <div style="font-size:19px;margin-top:10px">+${bonus} ⭐ voor de werkplaats${extraTk||tk?' · 🎟️ speelticket erbij!':''}</div>
      ${badges}</div>`
    :`<div class="card res">
@@ -1421,14 +1550,17 @@ function renderOverview(cloud){
   const fastN=p=>Object.values(p.facts).filter(f=>factLevel(f)==='fast').length;
   $('#s-overview').innerHTML=`
    <div class="topbar"><button class="btn ghost" data-a="players">← Terug</button><div class="who" style="font-size:22px">👩‍🏫 Overzicht</div></div>
+   ${cloud?tafelEditor():''}
    <div class="card" style="overflow-x:auto">
-    <table class="ov"><tr><th>Leerling</th><th>🔥 Op rij</th><th>Rondes (7 dagen)</th><th>⚡ Bliksemsommen</th><th>⚡ Tafels</th><th>🎓 Maal</th><th>🎓 Deel</th><th>Laatst</th>${cloud?'<th>Prentjescode</th>':''}</tr>
-    ${ps.map(p=>`<tr><td>${p.avatar} ${esc(p.name)}</td><td>${streak(p)}</td><td>${weekRounds(p)}</td><td>${fastN(p)}</td><td>${boltCount(p)}</td><td>${Object.keys(p.diplomas).filter(k=>k[0]==='m').length}</td><td>${Object.keys(p.diplomas).filter(k=>k[0]==='d').length}</td><td>${last(p)}</td>${cloud?`<td>${p._code?`<button class="btn small" data-a="kreset" data-id="${p.id}">🔑 wissen</button>`:'<span class="muted">nog geen</span>'}</td>`:''}</tr>`).join('')}
+    <table class="ov"><tr><th>Leerling</th>${cloud?'<th>🎯 Tafels</th>':''}<th>🔥 Op rij</th><th>Rondes (7 dagen)</th><th>⚡ Bliksemsommen</th><th>⚡ Tafels</th><th>🎓 Maal</th><th>🎓 Deel</th><th>Laatst</th>${cloud?'<th>Prentjescode</th>':''}</tr>
+    ${ps.map(p=>`<tr><td>${p.avatar} ${esc(p.name)}</td>${cloud?`<td>${tafelSummary(p)}</td>`:''}<td>${streak(p)}</td><td>${weekRounds(p)}</td><td>${fastN(p)}</td><td>${boltCount(p)}</td><td>${Object.keys(p.diplomas).filter(k=>k[0]==='m').length}</td><td>${Object.keys(p.diplomas).filter(k=>k[0]==='d').length}</td><td>${last(p)}</td>${cloud?`<td>${p._code?`<button class="btn small" data-a="kreset" data-id="${p.id}">🔑 wissen</button>`:'<span class="muted">nog geen</span>'}</td>`:''}</tr>`).join('')}
     </table>
     <p class="muted" style="font-size:15px;margin-bottom:0">Bliksemsom = de laatste keren juist én gemiddeld sneller dan 3 seconden. ${cloud?'Code vergeten? Wis ze hier: het kind kiest dan een nieuwe en de voortgang blijft. Leerlingen toevoegen doe je in Robbie in Robotland.':'Gegevens staan alleen op dit toestel.'}</p>
    </div>`;
   show('s-overview');
+  const sel=$('#tsel'); if(sel) sel.onchange=()=>{if(ovEdit&&!confirmLeave())return sel.value=ovSel;ovSel=sel.value;ovEdit=null;ovMsg='';ovRender()};
 }
+const confirmLeave=()=>{ovEdit=null;return true};
 
 /* ---------- Acties ---------- */
 const A={
@@ -1437,7 +1569,7 @@ const A={
   newPlayer:()=>newPlayerModal(),
   manage:()=>{managing=!managing;renderPlayers()},
   overview:()=>renderOverview(),
-  players:()=>{managing=false; if(SYNC&&sess){pushNow();sess=null} renderPlayers()},
+  players:()=>{managing=false; if(SYNC&&sess){pushNow();sess=null;jufT=null} renderPlayers()},
   kcode:()=>{const c=normCode(($('#kc')||{}).value); if(c.length<4){$('#kc').style.borderColor='var(--coral)';return} store.klascode=c; save(); renderKlas()},
   kother:()=>{store.klascode=''; save(); renderCodeAsk()},
   kpick:el=>klasPick(el.dataset.id),
@@ -1447,10 +1579,17 @@ const A={
       try{await rpc('mt_code_wissen',{p_leerling:id},teacherTok)}catch(e){}
       loadOverview()})},
   closeOv:()=>$('#ov').classList.remove('on'),
+  tcell:el=>{const T=ovEdit||cloneT(ovBase()),o=el.dataset.o,i=+el.dataset.t-1;T[o][i]=(T[o][i]+1)%3;ovEdit=T;ovMsg='';ovRender()},
+  tall:el=>{const v=+el.dataset.v,T={m:TN.map(()=>v),d:TN.map(()=>v)};ovEdit=T;ovMsg='';ovRender()},
+  tundo:()=>{ovEdit=null;ovMsg='';ovRender()},
+  tsave:()=>tSave(),
+  tback:()=>{const st=ovStudent();if(!st)return;confirmModal(`${esc(st.name)} terug laten volgen wat de klas oefent?`,async()=>{
+    await tSave({})},'Ja','teal')},
+  tpick:el=>{ovSel=el.dataset.id;ovEdit=null;ovMsg='';ovRender();window.scrollTo(0,0)},
   sound:()=>{store.sound=!store.sound;save();renderMenu()},
-  tbl:el=>{const p=P(),t=+el.dataset.t;if(p.tables.includes(t)){if(p.tables.length>1)p.tables=p.tables.filter(x=>x!==t)}else p.tables.push(t);save();renderMenu()},
+  tbl:el=>{if(el.disabled)return;const p=P(),t=+el.dataset.t;if(p.tables.includes(t)){if(p.tables.length>1)p.tables=p.tables.filter(x=>x!==t)}else p.tables.push(t);save();renderMenu()},
   preset:el=>{P().tables=el.dataset.v.split(',').map(Number);save();renderMenu()},
-  op:el=>{P().op=el.dataset.v;save();renderMenu()},
+  op:el=>{if(el.disabled)return;const p=P();p.op=el.dataset.v;fitChoice(p);save();renderMenu()},
   dur:el=>{P().dur=+el.dataset.v;save();renderMenu()},
   race:()=>startGame('race'),
   duel:()=>startDuel(),
@@ -1466,6 +1605,7 @@ const A={
   shop:()=>renderShop(),
   shopi:el=>shopClick(el.dataset.c,el.dataset.id),
   boss:el=>{const p=P(),t=+el.dataset.t,op=el.dataset.o==='d'?'d':'m';
+    if(jufT&&tState(jufT,op,t)===0&&!p.diplomas[op+t]){const m=$('#bossmsg');if(m)m.innerHTML=`🔒 De ${op==='d'?'deeltafel':'maaltafel'} van ${t} heeft de juf nog niet klaargezet.`;return}
     if(p.diplomas[op+t]||bossIsOpen(p,op,t)) startBoss(t,op);
     else{const m=$('#bossmsg');if(m)m.innerHTML=op==='d'
       ?`🔒 Kies bovenaan <b>: delen</b> en maak alle deelsommen van <b>tafel ${t}</b> groen. Dan durft Bugbot!`
